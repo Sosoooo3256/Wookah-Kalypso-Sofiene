@@ -1,0 +1,2073 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WOOKAH® Oak Crystal — The Purest Draw</title>
+<meta name="description" content="WOOKAH® Oak Crystal — chêne massif, acier V2A et cristal taillé main. Expérience 3D interactive et collection.">
+<meta name="theme-color" content="#08080c">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   WOOKAH® — DESIGN TOKENS
+   ========================================================= */
+:root{
+  --bg:#08080c;
+  --bg-2:#0d0d13;
+  --bg-3:#13131b;
+  --ink:#f4efe6;
+  --ink-dim:rgba(244,239,230,.66);
+  --ink-mute:rgba(244,239,230,.42);
+  --gold:#d4af6a;
+  --gold-2:#f1d9a4;
+  --gold-deep:#9c7536;
+  --line:rgba(212,175,106,.26);
+  --line-soft:rgba(244,239,230,.09);
+  --glass:rgba(16,16,22,.52);
+  --glass-strong:rgba(12,12,18,.78);
+  --radius:18px;
+  --ease:cubic-bezier(.22,1,.36,1);
+  --f-display:'Cinzel', 'Times New Roman', serif;
+  --f-body:'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --gutter:clamp(16px, 4.2vw, 64px);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg);-webkit-text-size-adjust:100%}
+html.lenis, html.lenis body{height:auto}
+.lenis.lenis-smooth{scroll-behavior:auto !important}
+.lenis.lenis-smooth [data-lenis-prevent]{overscroll-behavior:contain}
+.lenis.lenis-stopped{overflow:hidden}
+body{
+  background:var(--bg);color:var(--ink);font-family:var(--f-body);font-weight:400;
+  line-height:1.55;overflow-x:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+body.is-loading{overflow:hidden}
+img{display:block;max-width:100%}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--gold);color:#0b0b0f}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* =========================================================
+   BACKDROP LAYERS (glow, canvas, vignette, grain)
+   ========================================================= */
+.bg-glow{
+  position:fixed;left:0;top:0;width:120vmax;height:120vmax;margin:-60vmax 0 0 -60vmax;z-index:0;pointer-events:none;
+  background:radial-gradient(closest-side, rgba(212,160,90,.16), rgba(212,160,90,.06) 45%, transparent 72%);
+  will-change:transform;transform:translate3d(50vw,50vh,0);
+}
+#webgl{position:fixed;inset:0;width:100%;height:100%;z-index:1;display:block;outline:none;pointer-events:none}
+.vignette{position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(4,4,6,.55) 100%)}
+.grain{position:fixed;inset:-50%;z-index:60;pointer-events:none;opacity:.055;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  animation:grain 1.2s steps(6) infinite}
+@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-3%)}60%{transform:translate(-2%,-1%)}80%{transform:translate(3%,3%)}100%{transform:translate(0,0)}}
+
+/* =========================================================
+   LOADER
+   ========================================================= */
+.loader{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;
+  clip-path:inset(0 0 0 0);}
+.loader__inner{display:flex;flex-direction:column;align-items:center;gap:26px}
+.loader__word{font-family:var(--f-display);font-weight:600;font-size:clamp(28px,5vw,54px);letter-spacing:.42em;
+  padding-left:.42em;display:flex;overflow:hidden}
+.loader__word span{display:inline-block;transform:translateY(110%)}
+.loader__bar{width:min(260px,60vw);height:1px;background:var(--line-soft);position:relative;overflow:hidden}
+.loader__bar i{position:absolute;inset:0;background:linear-gradient(90deg,var(--gold-deep),var(--gold-2));transform-origin:left;transform:scaleX(0)}
+.loader__meta{display:flex;justify-content:space-between;width:min(260px,60vw);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-mute)}
+.loader__count{font-variant-numeric:tabular-nums;color:var(--gold)}
+
+/* =========================================================
+   NAV
+   ========================================================= */
+.nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
+  padding:18px var(--gutter);pointer-events:none;transition:background .5s var(--ease), border-color .5s var(--ease)}
+.nav > *{pointer-events:auto}
+.nav.is-solid{background:rgba(8,8,12,.62);-webkit-backdrop-filter:blur(16px) saturate(140%);backdrop-filter:blur(16px) saturate(140%);border-bottom:1px solid var(--line-soft)}
+.brand{font-family:var(--f-display);font-weight:600;font-size:18px;letter-spacing:.34em;display:flex;align-items:flex-start;gap:2px}
+.brand sup{font-family:var(--f-body);font-size:9px;letter-spacing:0;margin-top:2px;color:var(--gold)}
+.nav__links{display:flex;gap:6px;padding:6px;border-radius:999px;border:1px solid var(--line-soft);
+  background:rgba(14,14,20,.38);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.nav__links a{font-size:12.5px;letter-spacing:.08em;padding:8px 16px;border-radius:999px;color:var(--ink-dim);transition:color .3s, background .3s}
+.nav__links a:hover{color:var(--ink);background:rgba(212,175,106,.1)}
+.nav__right{display:flex;align-items:center;gap:10px}
+.lang{font-size:11px;letter-spacing:.2em;color:var(--ink-mute);padding:0 6px}
+.cart-btn{position:relative;display:flex;align-items:center;gap:10px;height:42px;padding:0 16px 0 14px;border-radius:999px;
+  border:1px solid var(--line);background:rgba(14,14,20,.45);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  font-size:12.5px;letter-spacing:.08em;transition:border-color .3s, background .3s}
+.cart-btn:hover{border-color:var(--gold);background:rgba(212,175,106,.12)}
+.cart-btn svg{width:17px;height:17px}
+.cart-count{min-width:20px;height:20px;border-radius:999px;background:var(--gold);color:#0b0b0f;font-weight:700;font-size:11px;
+  display:grid;place-items:center;padding:0 5px}
+
+/* =========================================================
+   BUTTONS / BADGES
+   ========================================================= */
+.btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:10px;height:52px;padding:0 26px;border-radius:999px;
+  font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;overflow:hidden;isolation:isolate;
+  transition:transform .5s var(--ease), border-color .4s, color .4s, box-shadow .5s}
+.btn svg{width:16px;height:16px;transition:transform .5s var(--ease)}
+.btn:hover svg{transform:translateX(4px)}
+.btn--gold{color:#120e07;background:linear-gradient(135deg,#f3dcaa 0%,#d4af6a 45%,#a8803f 100%);
+  box-shadow:0 10px 30px -10px rgba(212,175,106,.55), inset 0 1px 0 rgba(255,255,255,.45)}
+.btn--gold::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);
+  transform:translateX(-120%);transition:transform .9s var(--ease)}
+.btn--gold:hover::after{transform:translateX(120%)}
+.btn--gold:hover{box-shadow:0 16px 40px -12px rgba(212,175,106,.75), inset 0 1px 0 rgba(255,255,255,.5)}
+.btn--ghost{color:var(--ink);border:1px solid var(--line);background:rgba(16,16,22,.35);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.btn--ghost::before{content:"";position:absolute;inset:0;z-index:-1;background:rgba(212,175,106,.14);transform:scaleY(0);transform-origin:bottom;transition:transform .5s var(--ease)}
+.btn--ghost:hover{border-color:var(--gold)}
+.btn--ghost:hover::before{transform:scaleY(1)}
+.btn--sm{height:42px;padding:0 18px;font-size:11.5px}
+.badge{display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 13px;border-radius:999px;border:1px solid var(--line);
+  background:rgba(16,16,22,.4);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-2)}
+.badge i{width:5px;height:5px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px var(--gold)}
+.eyebrow{display:flex;align-items:center;gap:14px;font-size:11.5px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold)}
+.eyebrow::before{content:"";width:34px;height:1px;background:linear-gradient(90deg,transparent,var(--gold))}
+.gold-text{background:linear-gradient(100deg,#b88c47 0%,#f6e2b3 28%,#d4af6a 48%,#fff1cf 62%,#a47b3b 100%);background-size:220% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;animation:sheen 7s ease-in-out infinite}
+@keyframes sheen{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+
+/* =========================================================
+   HUD (fixed storytelling overlay)
+   ========================================================= */
+.hud{position:fixed;inset:0;z-index:10;pointer-events:none}
+.hud .interactive{pointer-events:auto}
+.hero-copy{position:absolute;left:var(--gutter);top:50%;transform:translateY(-50%);width:min(560px,46vw)}
+.hero-copy .eyebrow{margin-bottom:26px}
+.hero-title{font-family:var(--f-display);font-weight:600;line-height:.92;font-size:clamp(50px,7.1vw,118px);letter-spacing:.04em}
+.hero-title sup{font-family:var(--f-body);font-weight:400;font-size:.22em;vertical-align:top;position:relative;top:.35em;color:var(--gold)}
+.hero-sub{font-family:var(--f-display);font-weight:400;font-size:clamp(26px,3.1vw,46px);letter-spacing:.14em;margin-top:10px}
+.hero-tag{margin-top:18px;font-size:13px;letter-spacing:.46em;text-transform:uppercase;color:var(--ink-dim)}
+.hero-desc{margin-top:26px;max-width:430px;font-size:15.5px;color:var(--ink-dim);font-weight:300}
+.hero-ctas{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}
+.hero-mats{display:flex;gap:26px;margin-top:40px;padding-top:24px;border-top:1px solid var(--line-soft)}
+.hero-mats div{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-mute)}
+.hero-mats b{display:block;font-family:var(--f-display);font-weight:500;font-size:15px;letter-spacing:.08em;color:var(--ink);text-transform:none;margin-bottom:4px}
+.split-line{display:block;overflow:hidden;padding-bottom:.06em;white-space:nowrap}
+.split-line > span{display:inline-block;will-change:transform}
+.char{display:inline-block;will-change:transform}
+
+.scroll-cue{position:absolute;left:50%;bottom:28px;display:flex;flex-direction:column;align-items:center;gap:12px;
+  font-size:10.5px;letter-spacing:.4em;text-transform:uppercase;color:var(--ink-mute)}
+.scroll-cue span{width:1px;height:54px;background:linear-gradient(var(--gold),transparent);position:relative;overflow:hidden}
+.scroll-cue span::after{content:"";position:absolute;left:0;top:-40%;width:1px;height:40%;background:var(--gold-2);animation:cue 2s var(--ease) infinite}
+@keyframes cue{to{top:110%}}
+
+.anatomy-head{position:absolute;left:50%;top:92px;transform:translateX(-50%);text-align:center;width:min(760px,92vw)}
+.anatomy-inner,.box-inner{opacity:0;visibility:hidden}
+.anatomy-head .eyebrow{justify-content:center}
+.anatomy-head .eyebrow::after{content:"";width:34px;height:1px;background:linear-gradient(270deg,transparent,var(--gold))}
+.anatomy-head h2{font-family:var(--f-display);font-weight:500;font-size:clamp(24px,2.8vw,40px);letter-spacing:.06em;margin-top:12px}
+
+/* spec cards */
+.spec{position:absolute;left:0;top:0;width:320px;padding:20px 22px 18px;border-radius:var(--radius);
+  background:linear-gradient(160deg,rgba(24,22,28,.72),rgba(10,10,14,.6));border:1px solid var(--line);
+  -webkit-backdrop-filter:blur(16px) saturate(140%);backdrop-filter:blur(16px) saturate(140%);
+  box-shadow:0 30px 60px -30px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.05);
+  opacity:0;visibility:hidden;will-change:transform,opacity}
+.spec::before{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;pointer-events:none;
+  background:linear-gradient(140deg,rgba(241,217,164,.7),transparent 35%,transparent 70%,rgba(212,175,106,.45));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.spec__idx{display:flex;justify-content:space-between;font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold)}
+.spec__idx em{font-style:normal;color:var(--ink-mute)}
+.spec h3{font-family:var(--f-display);font-weight:500;font-size:19px;letter-spacing:.03em;line-height:1.2;margin:10px 0 8px}
+.spec p{font-size:13px;color:var(--ink-dim);font-weight:300;line-height:1.55}
+.spec dl{margin-top:14px;display:grid;gap:0}
+.spec dl div{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--line-soft);font-size:12px}
+.spec dt{color:var(--ink-mute);letter-spacing:.06em}
+.spec dd{color:var(--ink);font-weight:500;text-align:right}
+.leaders{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.leaders path{fill:none;stroke:url(#leaderGrad);stroke-width:1;vector-effect:non-scaling-stroke}
+.leaders .dot{fill:var(--gold-2)}
+.leaders .halo{fill:none;stroke:var(--gold);stroke-width:1;opacity:.6}
+
+.box-copy-wrap{position:absolute;inset:0}
+.box-copy{position:absolute;left:var(--gutter);top:50%;transform:translateY(-50%);width:min(500px,42vw)}
+.box-copy h2{font-family:var(--f-display);font-weight:500;font-size:clamp(34px,4vw,64px);line-height:1.02;letter-spacing:.03em;margin:22px 0 18px}
+.box-copy p{color:var(--ink-dim);font-weight:300;max-width:420px}
+.box-copy .badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+
+/* progress rail */
+.rail{position:absolute;right:calc(var(--gutter) * .7);top:50%;transform:translateY(-50%);display:flex;gap:16px;align-items:stretch}
+.rail__track{width:1px;background:var(--line-soft);position:relative}
+.rail__track i{position:absolute;left:0;top:0;width:1px;height:100%;background:linear-gradient(var(--gold-2),var(--gold));transform-origin:top;transform:scaleY(0)}
+.rail ol{list-style:none;display:flex;flex-direction:column;gap:22px}
+.rail li button{display:flex;align-items:center;gap:10px;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-mute);transition:color .4s}
+.rail li button b{font-family:var(--f-display);font-weight:500;font-size:11px;letter-spacing:.1em}
+.rail li button:hover, .rail li.is-active button{color:var(--gold-2)}
+.rail li button span{max-width:0;overflow:hidden;white-space:nowrap;transition:max-width .6s var(--ease)}
+.rail li.is-active button span, .rail:hover li button span{max-width:120px}
+
+/* =========================================================
+   STORY SPACER & COLLECTION
+   ========================================================= */
+main{position:relative;z-index:3}
+#story{height:700vh;height:700svh;position:relative}
+#story .chapter{position:absolute;left:0;width:1px;height:1px}
+.collection{position:relative;z-index:20;background:
+  linear-gradient(180deg, rgba(8,8,12,0) 0, rgba(8,8,12,.92) 22vh, var(--bg) 40vh);padding-top:26vh}
+.lineup{padding:0 var(--gutter);text-align:center}
+.lineup .eyebrow{justify-content:center}
+.lineup .eyebrow::after{content:"";width:34px;height:1px;background:linear-gradient(270deg,transparent,var(--gold))}
+.lineup__title{font-family:var(--f-display);font-weight:600;font-size:clamp(40px,9.2vw,170px);line-height:.95;letter-spacing:.02em;margin-top:22px}
+.lineup__title .split-line{padding-bottom:.08em;white-space:normal}
+.word{display:inline-block;white-space:nowrap}
+.lineup__lead{max-width:560px;margin:22px auto 0;color:var(--ink-dim);font-weight:300}
+
+.marquee{margin:80px 0 70px;border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);overflow:hidden;padding:22px 0;
+  background:linear-gradient(90deg,var(--bg),transparent 12%,transparent 88%,var(--bg))}
+.marquee__track{display:flex;width:max-content;will-change:transform}
+.marquee__track span{font-family:var(--f-display);font-size:clamp(22px,2.6vw,38px);letter-spacing:.14em;white-space:nowrap;padding-right:48px;color:var(--ink-dim)}
+.marquee__track span em{font-style:normal;color:var(--gold);padding:0 22px 0 0}
+
+.shop{padding:0 var(--gutter) 120px;max-width:1520px;margin:0 auto}
+.shop__bar{display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between;margin-bottom:34px}
+.filters{display:flex;flex-wrap:wrap;gap:8px}
+.filter{height:40px;padding:0 18px;border-radius:999px;border:1px solid var(--line-soft);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim);
+  transition:all .4s var(--ease)}
+.filter:hover{border-color:var(--line);color:var(--ink)}
+.filter.is-active{border-color:var(--gold);color:#120e07;background:linear-gradient(135deg,#f0d7a1,#c9a15c)}
+.shop__meta{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-mute)}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px}
+.product{position:relative;border-radius:22px;background:linear-gradient(180deg,var(--bg-3),var(--bg-2));border:1px solid var(--line-soft);
+  overflow:hidden;display:flex;flex-direction:column;transition:border-color .5s var(--ease), box-shadow .6s var(--ease);
+  transform-style:preserve-3d;--mx:50%;--my:30%}
+.product:hover{border-color:var(--line);box-shadow:0 40px 80px -40px rgba(212,175,106,.35)}
+.product::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity .5s;
+  background:radial-gradient(420px circle at var(--mx) var(--my), rgba(241,217,164,.10), transparent 45%)}
+.product:hover::after{opacity:1}
+.p-media{position:relative;aspect-ratio:4/5;overflow:hidden;
+  background:radial-gradient(70% 60% at 50% 42%, rgba(212,175,106,.20), rgba(212,175,106,.03) 55%, transparent 75%), linear-gradient(180deg,#15141b,#0c0c11)}
+.p-media::before{content:"";position:absolute;left:18%;right:18%;bottom:7%;height:7%;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.75),transparent)}
+.p-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transition:transform 1s var(--ease), opacity .45s}
+.product:hover .p-media img{transform:translateY(-10px) scale(1.035)}
+.p-media .ph{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-display);font-size:42px;color:var(--line)}
+.p-badge{position:absolute;left:16px;top:16px;z-index:2}
+.p-wish{position:absolute;right:14px;top:14px;z-index:2;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;
+  border:1px solid var(--line-soft);background:rgba(10,10,14,.45);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:all .4s var(--ease)}
+.p-wish svg{width:16px;height:16px;transition:transform .4s var(--ease)}
+.p-wish:hover{border-color:var(--gold)}
+.p-wish.is-on{color:var(--gold);border-color:var(--gold)}
+.p-wish.is-on svg{fill:var(--gold);transform:scale(1.1)}
+.p-body{padding:20px 20px 22px;display:flex;flex-direction:column;gap:12px;flex:1}
+.p-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.p-line{font-size:10px;letter-spacing:.3em;color:var(--gold);text-transform:uppercase}
+.p-top h3{font-family:var(--f-display);font-weight:500;font-size:19px;letter-spacing:.03em;line-height:1.2;margin-top:4px}
+.p-price{font-family:var(--f-display);font-size:18px;white-space:nowrap;color:var(--gold-2);font-variant-numeric:tabular-nums}
+.p-desc{font-size:13px;color:var(--ink-dim);font-weight:300}
+.p-opts{display:flex;flex-wrap:wrap;gap:6px}
+.chip{height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--line-soft);font-size:11px;letter-spacing:.06em;color:var(--ink-dim);transition:all .35s var(--ease);display:inline-flex;align-items:center;gap:7px}
+.chip:hover{border-color:var(--line);color:var(--ink)}
+.chip.is-active{border-color:var(--gold);color:var(--gold-2);background:rgba(212,175,106,.1)}
+.chip .sw{width:11px;height:11px;border-radius:50%;border:1px solid rgba(255,255,255,.25)}
+.p-actions{margin-top:auto;display:flex;gap:8px;padding-top:6px}
+.p-actions .btn{flex:1}
+.p-ship{font-size:11px;color:var(--ink-mute);letter-spacing:.04em;display:flex;align-items:center;gap:8px}
+.p-ship i{width:6px;height:6px;border-radius:50%;background:#7fd19b;box-shadow:0 0 8px #7fd19b}
+
+.promise{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-top:90px;border:1px solid var(--line-soft);border-radius:22px;overflow:hidden;background:var(--line-soft)}
+.promise div{background:var(--bg-2);padding:28px 24px}
+.promise b{display:block;font-family:var(--f-display);font-weight:500;font-size:16px;letter-spacing:.05em;margin-bottom:6px}
+.promise span{font-size:13px;color:var(--ink-dim);font-weight:300}
+
+/* footer */
+.footer{position:relative;z-index:20;background:var(--bg);border-top:1px solid var(--line-soft);padding:80px var(--gutter) 34px}
+.footer__top{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:48px;max-width:1520px;margin:0 auto}
+.footer__brand .brand{font-size:26px}
+.footer__brand p{margin-top:16px;color:var(--ink-dim);font-weight:300;font-size:14px;max-width:340px}
+.news{display:flex;margin-top:24px;max-width:400px;border:1px solid var(--line);border-radius:999px;padding:5px;background:rgba(16,16,22,.4)}
+.news input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--ink);font:inherit;font-size:13.5px;padding:0 16px}
+.news input::placeholder{color:var(--ink-mute)}
+.footer h4{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);font-weight:500;margin-bottom:18px}
+.footer ul{list-style:none;display:grid;gap:10px}
+.footer li a{font-size:14px;color:var(--ink-dim);transition:color .3s}
+.footer li a:hover{color:var(--ink)}
+.footer__giant{font-family:var(--f-display);font-weight:600;text-align:center;font-size:clamp(60px,17vw,300px);letter-spacing:.08em;line-height:.9;margin:80px auto 30px;
+  background:linear-gradient(180deg,rgba(212,175,106,.35),rgba(212,175,106,0) 85%);-webkit-background-clip:text;background-clip:text;color:transparent;user-select:none}
+.footer__bottom{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-between;max-width:1520px;margin:0 auto;padding-top:24px;border-top:1px solid var(--line-soft);
+  font-size:11.5px;letter-spacing:.06em;color:var(--ink-mute)}
+
+/* =========================================================
+   CART DRAWER, TOAST, CURSOR
+   ========================================================= */
+.scrim{position:fixed;inset:0;z-index:80;background:rgba(4,4,6,.55);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);opacity:0;visibility:hidden;transition:opacity .5s var(--ease),visibility .5s}
+.drawer{position:fixed;top:0;right:0;bottom:0;z-index:81;width:min(440px,100vw);display:flex;flex-direction:column;
+  background:linear-gradient(180deg,rgba(18,17,23,.94),rgba(10,10,14,.97));border-left:1px solid var(--line);
+  -webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);transform:translateX(102%);transition:transform .7s var(--ease)}
+body.cart-open .drawer{transform:none}
+body.cart-open .scrim{opacity:1;visibility:visible}
+.drawer__head{display:flex;justify-content:space-between;align-items:center;padding:24px 26px;border-bottom:1px solid var(--line-soft)}
+.drawer__head h3{font-family:var(--f-display);font-weight:500;font-size:20px;letter-spacing:.08em}
+.icon-btn{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line-soft);transition:border-color .3s, transform .5s var(--ease)}
+.icon-btn:hover{border-color:var(--gold);transform:rotate(90deg)}
+.icon-btn svg{width:16px;height:16px}
+.drawer__items{flex:1;overflow:auto;padding:10px 26px}
+.drawer__empty{padding:60px 0;text-align:center;color:var(--ink-mute);font-size:14px}
+.ci{display:grid;grid-template-columns:76px 1fr auto;gap:14px;padding:16px 0;border-bottom:1px solid var(--line-soft);align-items:center}
+.ci__img{width:76px;height:92px;border-radius:12px;background:radial-gradient(circle at 50% 40%,rgba(212,175,106,.18),#0f0f15 70%);overflow:hidden}
+.ci__img img{width:100%;height:100%;object-fit:contain}
+.ci h5{font-family:var(--f-display);font-weight:500;font-size:14.5px;letter-spacing:.03em}
+.ci small{display:block;color:var(--ink-mute);font-size:11.5px;margin-top:2px}
+.qty{display:inline-flex;align-items:center;margin-top:10px;border:1px solid var(--line-soft);border-radius:999px;height:30px}
+.qty button{width:30px;height:30px;font-size:15px;color:var(--ink-dim)}
+.qty button:hover{color:var(--gold)}
+.qty span{min-width:22px;text-align:center;font-size:12.5px;font-variant-numeric:tabular-nums}
+.ci__price{font-family:var(--f-display);font-size:15px;color:var(--gold-2);text-align:right}
+.ci__rm{display:block;margin-top:8px;font-size:11px;color:var(--ink-mute);text-decoration:underline;text-underline-offset:3px}
+.drawer__foot{padding:22px 26px 26px;border-top:1px solid var(--line-soft);display:grid;gap:14px}
+.row{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-dim)}
+.row.total{font-size:15px;color:var(--ink)}
+.row.total b{font-family:var(--f-display);font-size:22px;color:var(--gold-2);font-weight:500}
+.drawer__foot .btn{width:100%}
+.toast{position:fixed;left:50%;bottom:28px;z-index:90;transform:translate(-50%,calc(100% + 90px));visibility:hidden;display:flex;align-items:center;gap:12px;
+  padding:12px 18px 12px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(14,14,20,.85);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+  font-size:13px;box-shadow:0 20px 40px -20px rgba(0,0,0,.8);transition:transform .7s var(--ease);max-width:calc(100vw - 32px)}
+.toast.is-on{transform:translate(-50%,0);visibility:visible}
+.toast i{width:22px;height:22px;border-radius:50%;background:var(--gold);color:#120e07;display:grid;place-items:center;flex:none}
+.toast i svg{width:12px;height:12px}
+.fly{position:fixed;z-index:95;pointer-events:none;border-radius:14px;object-fit:contain}
+
+.cursor{position:fixed;left:0;top:0;z-index:99;pointer-events:none;display:none;opacity:0;transition:opacity .4s}
+.cursor.is-on{opacity:1}
+.cursor__dot{position:fixed;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:var(--gold-2)}
+.cursor__ring{position:fixed;width:38px;height:38px;margin:-19px 0 0 -19px;border-radius:50%;border:1px solid rgba(212,175,106,.55);
+  transition:width .4s var(--ease),height .4s var(--ease),margin .4s var(--ease),background .4s,border-color .4s}
+.cursor.is-hover .cursor__ring{width:70px;height:70px;margin:-35px 0 0 -35px;background:rgba(212,175,106,.08);border-color:var(--gold)}
+@media (hover:hover) and (pointer:fine){ .cursor{display:block} }
+
+.no-webgl #webgl{display:none}
+.no-webgl .fallback{display:grid}
+.fallback{display:none;position:fixed;right:var(--gutter);bottom:40px;z-index:11;max-width:320px;padding:16px 18px;border-radius:14px;border:1px solid var(--line);background:var(--glass-strong);font-size:13px;color:var(--ink-dim)}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media (max-height:800px) and (min-width:1024px){ .spec p{display:none} .spec h3{margin-bottom:0} }
+@media (max-width:1200px){
+  .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .footer__top{grid-template-columns:1.2fr 1fr 1fr}
+  .footer__top > div:last-child{display:none}
+}
+@media (max-width:1023px){
+  .nav__links{display:none}
+  .rail{display:none}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .promise{grid-template-columns:repeat(2,1fr)}
+  .spec{width:min(420px,calc(100vw - 32px))}
+}
+@media (max-width:767px){
+  :root{--gutter:16px}
+  .nav{padding:14px 16px}
+  .brand{font-size:15px;letter-spacing:.28em}
+  .lang{display:none}
+  .cart-btn .cart-label{display:none}
+  .hero-copy{left:16px;right:16px;top:86px;transform:none;width:auto;text-align:center}
+  .hero-copy .eyebrow{justify-content:center;margin-bottom:14px;font-size:10px}
+  .hero-copy .eyebrow::before{display:none}
+  .hero-title{font-size:clamp(46px,14vw,70px)}
+  .hero-sub{font-size:22px;margin-top:6px}
+  .hero-tag{font-size:10.5px;letter-spacing:.36em;margin-top:10px}
+  .hero-desc,.hero-mats{display:none}
+  .hero-ctas{justify-content:center;margin-top:18px;gap:8px}
+  .hero-ctas .btn{height:44px;padding:0 16px;font-size:10.5px;letter-spacing:.1em}
+  .scroll-cue{display:none}
+  .anatomy-head{top:70px}
+  .anatomy-head h2{font-size:20px}
+  .spec{padding:16px 18px 14px}
+  .spec h3{font-size:17px;margin:8px 0 6px}
+  .spec p{font-size:12.5px}
+  .spec dl{margin-top:10px}
+  .spec dl div{padding:6px 0}
+  .box-copy{left:16px;right:16px;top:78px;transform:none;width:auto;text-align:center}
+  .box-copy .eyebrow{justify-content:center}
+  .box-copy .eyebrow::before{display:none}
+  .box-copy h2{font-size:32px;margin:12px 0 10px}
+  .box-copy p{font-size:13.5px;margin:0 auto}
+  .box-copy .badges{justify-content:center;margin-top:14px}
+  .rail{display:none}
+  .collection{padding-top:18vh}
+  .marquee{margin:50px 0 44px}
+  .shop__bar{flex-direction:column;align-items:flex-start}
+  .filters{flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:4px;scrollbar-width:none}
+  .filters::-webkit-scrollbar{display:none}
+  .filter{flex:none}
+  .grid{gap:14px}
+  .p-body{padding:14px 14px 16px;gap:9px}
+  .p-top{flex-direction:column;gap:4px}
+  .p-top h3{font-size:16px}
+  .p-price{font-size:16px}
+  .p-desc{font-size:12px}
+  .p-actions .btn{height:44px;font-size:10.5px;padding:0 10px;letter-spacing:.08em}
+  .promise{grid-template-columns:1fr;margin-top:60px}
+  .footer{padding-top:60px}
+  .footer__top{grid-template-columns:1fr 1fr;gap:34px}
+  .footer__brand{grid-column:1/-1}
+}
+@media (max-width:479px){
+  .grid{grid-template-columns:1fr}
+  .p-top{flex-direction:row}
+}
+@media (prefers-reduced-motion:reduce){
+  .grain,.gold-text,.scroll-cue span::after{animation:none}
+}
+</style>
+</head>
+<body class="is-loading">
+
+<!-- ================= LOADER ================= -->
+<div class="loader" id="loader" aria-hidden="true">
+  <div class="loader__inner">
+    <div class="loader__word"><span>W</span><span>O</span><span>O</span><span>K</span><span>A</span><span>H</span></div>
+    <div class="loader__bar"><i id="loaderBar"></i></div>
+    <div class="loader__meta"><span id="loaderStep">Atelier</span><span class="loader__count" id="loaderCount">000</span></div>
+  </div>
+</div>
+
+<!-- ================= BACKDROP ================= -->
+<div class="bg-glow" id="bgGlow"></div>
+<canvas id="webgl" aria-label="Chicha WOOKAH Oak Crystal en 3D" role="img"></canvas>
+<div class="vignette"></div>
+<div class="grain"></div>
+<div class="fallback">WebGL n'est pas disponible sur ce navigateur : l'expérience 3D est désactivée, la collection reste accessible plus bas.</div>
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a href="#top" class="brand" data-scroll="0" data-cursor>WOOKAH<sup>®</sup></a>
+  <nav class="nav__links" aria-label="Navigation principale">
+    <a href="#anatomie" data-scroll="1" data-cursor>Anatomie</a>
+    <a href="#coffret" data-scroll="2" data-cursor>Le coffret</a>
+    <a href="#collection" data-scroll="3" data-cursor>Collection</a>
+    <a href="#footer" data-cursor>Maison</a>
+  </nav>
+  <div class="nav__right">
+    <span class="lang">FR · EUR</span>
+    <button class="cart-btn" id="cartBtn" aria-label="Ouvrir le panier" data-cursor>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 7h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8L5 7Z"/><path d="M9 7V6a3 3 0 0 1 6 0v1"/></svg>
+      <span class="cart-label">Panier</span>
+      <span class="cart-count" id="cartCount">0</span>
+    </button>
+  </div>
+</header>
+
+<!-- ================= HUD (fixed storytelling overlay) ================= -->
+<div class="hud" id="hud">
+
+  <!-- Section 1 — HERO -->
+  <div class="hero-copy"><div class="hero-inner" id="heroCopy">
+    <div class="eyebrow hero-reveal">Collection Signature · 2026</div>
+    <h1 class="hero-title"><span class="split-line"><span class="hero-word">WOOKAH</span><sup class="hero-reveal">®</sup></span></h1>
+    <div class="hero-sub"><span class="split-line"><span class="hero-word gold-text">Oak Crystal</span></span></div>
+    <div class="hero-tag hero-reveal">The Purest Draw</div>
+    <p class="hero-desc hero-reveal">Chêne massif tourné, acier V2A brossé et cristal de Bohême taillé à la main. Une chicha pensée comme un objet d'art — pour un tirage d'une pureté absolue.</p>
+    <div class="hero-ctas hero-reveal">
+      <button class="btn btn--gold interactive magnetic" data-scroll="1" data-cursor>Explorer l'anatomie
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <button class="btn btn--ghost interactive magnetic" data-scroll="3" data-cursor>La collection</button>
+    </div>
+    <div class="hero-mats hero-reveal">
+      <div><b>Chêne massif</b>Colonne</div>
+      <div><b>Inox V2A</b>Assiette</div>
+      <div><b>Cristal taillé</b>Vase</div>
+    </div>
+  </div></div>
+  <div class="scroll-cue" id="scrollCue">Scroll<span></span></div>
+
+  <!-- Section 2 — EXPLODED VIEW -->
+  <div class="anatomy-head"><div class="anatomy-inner" id="anatomyHead">
+    <div class="eyebrow">02 — Anatomie</div>
+    <h2>Chaque pièce, <span class="gold-text">une signature.</span></h2>
+  </div></div>
+
+  <svg class="leaders" id="leaders" aria-hidden="true">
+    <defs>
+      <linearGradient id="leaderGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#f1d9a4"/><stop offset="1" stop-color="#d4af6a"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <article class="spec" data-part="0">
+    <div class="spec__idx">01 · Assiette &amp; foyer <em>Inox</em></div>
+    <h3>Acier V2A brossé miroir</h3>
+    <p>Assiette usinée, brossage circulaire et adaptateur inox. Foyer en terre cuite Vorclas coiffé d'un régulateur de chaleur.</p>
+    <dl>
+      <div><dt>Matière</dt><dd>Inox V2A · 1.4301</dd></div>
+      <div><dt>Finition</dt><dd>Brossé circulaire</dd></div>
+      <div><dt>Foyer</dt><dd>Terre cuite Vorclas</dd></div>
+    </dl>
+  </article>
+  <article class="spec" data-part="1">
+    <div class="spec__idx">02 · Colonne <em>Bois noble</em></div>
+    <h3>Chêne massif tourné main</h3>
+    <p>Une colonne tournée dans un bloc de chêne massif puis huilée à la main. Chaque veinage est unique, aucune pièce n'est identique.</p>
+    <dl>
+      <div><dt>Essence</dt><dd>Chêne européen</dd></div>
+      <div><dt>Finition</dt><dd>Huile-cire satinée</dd></div>
+      <div><dt>Âme</dt><dd>Inox alimentaire</dd></div>
+    </dl>
+  </article>
+  <article class="spec" data-part="2">
+    <div class="spec__idx">03 · Quick-Lock <em>Connectique</em></div>
+    <h3>Bague Quick-Lock &amp; purge 360°</h3>
+    <p>Verrouillage en un quart de tour. Raccord tuyau incliné et soupape de purge à bille, orientable sur 360°.</p>
+    <dl>
+      <div><dt>Verrouillage</dt><dd>¼ de tour</dd></div>
+      <div><dt>Purge</dt><dd>Bille inox · 360°</dd></div>
+      <div><dt>Joints</dt><dd>Silicone alimentaire</dd></div>
+    </dl>
+  </article>
+  <article class="spec" data-part="3">
+    <div class="spec__idx">04 · Plongeur &amp; vase <em>Cristal</em></div>
+    <h3>Cristal de Bohême taillé</h3>
+    <p>Plongeur inox à diffuseur silencieux. Vase en cristal lourd, taillé à la roue diamantée : motifs étoilés et éventails.</p>
+    <dl>
+      <div><dt>Vase</dt><dd>Cristal taillé main</dd></div>
+      <div><dt>Plongeur</dt><dd>Inox V2A · diffuseur</dd></div>
+      <div><dt>Hauteur</dt><dd>≈ 60 cm</dd></div>
+    </dl>
+  </article>
+
+  <!-- Section 3 — RE-ASSEMBLY & PACKAGING -->
+  <div class="box-copy-wrap" id="boxCopyWrap">
+    <div class="box-copy"><div class="box-inner" id="boxCopy">
+      <div class="eyebrow">03 — Le coffret</div>
+      <h2>Réassemblée.<br><span class="gold-text">Scellée.</span></h2>
+      <p>Chaque WOOKAH® quitte l'atelier dans son coffret rigide noir mat, calage velours bordeaux et certificat d'authenticité numéroté.</p>
+      <div class="badges">
+        <span class="badge"><i></i>Coffret signature</span>
+        <span class="badge"><i></i>Certificat numéroté</span>
+        <span class="badge"><i></i>Calage velours</span>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- chapter rail -->
+  <div class="rail interactive" id="rail">
+    <div class="rail__track"><i id="railFill"></i></div>
+    <ol>
+      <li class="is-active"><button data-scroll="0" data-cursor><b>01</b><span>Oak Crystal</span></button></li>
+      <li><button data-scroll="1" data-cursor><b>02</b><span>Anatomie</span></button></li>
+      <li><button data-scroll="2" data-cursor><b>03</b><span>Coffret</span></button></li>
+      <li><button data-scroll="3" data-cursor><b>04</b><span>Collection</span></button></li>
+    </ol>
+  </div>
+</div>
+
+<!-- ================= SCROLL CONTENT ================= -->
+<main id="top">
+  <!-- Story spacer: drives the 3D timeline (Sections 1 → 3) -->
+  <section id="story" aria-label="Présentation interactive">
+    <span class="chapter" id="anatomie" style="top:31%"></span>
+    <span class="chapter" id="coffret" style="top:82%"></span>
+  </section>
+
+  <!-- Section 4 — CATALOG -->
+  <section class="collection" id="collection" aria-labelledby="lineupTitle">
+    <div class="lineup">
+      <div class="eyebrow">04 — The Lineup</div>
+      <h2 class="lineup__title" id="lineupTitle"><span class="split-line"><span class="lineup-split">The Collection.</span></span></h2>
+      <p class="lineup__lead">Chichas complètes, manches en cuir et en bois, foyers Vorclas. Tout l'univers WOOKAH®, assemblé à la main.</p>
+    </div>
+
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee__track" id="marquee"></div>
+    </div>
+
+    <div class="shop">
+      <div class="shop__bar">
+        <div class="filters" role="tablist" aria-label="Filtrer la collection">
+          <button class="filter is-active" data-filter="all" role="tab" aria-selected="true" data-cursor>Tout</button>
+          <button class="filter" data-filter="chichas" role="tab" aria-selected="false" data-cursor>Chichas complètes</button>
+          <button class="filter" data-filter="manches" role="tab" aria-selected="false" data-cursor>Manches</button>
+          <button class="filter" data-filter="foyers" role="tab" aria-selected="false" data-cursor>Foyers Vorclas</button>
+        </div>
+        <div class="shop__meta" id="shopMeta">8 pièces</div>
+      </div>
+      <div class="grid" id="grid"></div>
+
+      <div class="promise">
+        <div><b>Fait main</b><span>Chaque pièce est tournée, polie et assemblée à la main.</span></div>
+        <div><b>Livraison assurée</b><span>Expédition soignée dans le coffret signature.</span></div>
+        <div><b>Paiement sécurisé</b><span>Carte, virement et solutions de paiement en plusieurs fois.</span></div>
+        <div><b>Service atelier</b><span>Pièces détachées et entretien disponibles.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer" id="footer">
+    <div class="footer__top">
+      <div class="footer__brand">
+        <div class="brand">WOOKAH<sup>®</sup></div>
+        <p>Chichas d'exception en chêne massif, acier V2A et cristal taillé. The Purest Draw.</p>
+        <form class="news" id="newsForm">
+          <label class="sr-only" for="newsMail">E-mail</label>
+          <input id="newsMail" type="email" placeholder="Votre e-mail — avant-premières" required>
+          <button class="btn btn--gold btn--sm" type="submit" data-cursor>S'inscrire</button>
+        </form>
+      </div>
+      <div>
+        <h4>Boutique</h4>
+        <ul><li><a href="#collection" data-scroll="3">Chichas complètes</a></li><li><a href="#collection" data-scroll="3">Manches cuir &amp; bois</a></li><li><a href="#collection" data-scroll="3">Foyers Vorclas</a></li><li><a href="#collection" data-scroll="3">Pièces détachées</a></li></ul>
+      </div>
+      <div>
+        <h4>Maison</h4>
+        <ul><li><a href="#anatomie" data-scroll="1">Savoir-faire</a></li><li><a href="#coffret" data-scroll="2">Le coffret</a></li><li><a href="#footer">Revendeurs</a></li><li><a href="#footer">Presse</a></li></ul>
+      </div>
+      <div>
+        <h4>Aide</h4>
+        <ul><li><a href="#footer">Livraison &amp; retours</a></li><li><a href="#footer">Entretien</a></li><li><a href="#footer">Garantie</a></li><li><a href="#footer">Contact</a></li></ul>
+      </div>
+    </div>
+    <div class="footer__giant" aria-hidden="true">WOOKAH</div>
+    <div class="footer__bottom">
+      <span>© 2026 WOOKAH® — Concept digital, démonstration.</span>
+      <span>Vente réservée aux personnes majeures · Fumer nuit gravement à votre santé.</span>
+      <span>Mentions légales · CGV · Confidentialité</span>
+    </div>
+  </footer>
+</main>
+
+<!-- ================= CART DRAWER ================= -->
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="Panier" aria-hidden="true">
+  <div class="drawer__head">
+    <h3>Votre panier</h3>
+    <button class="icon-btn" id="cartClose" aria-label="Fermer le panier" data-cursor>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <div class="drawer__items" id="cartItems" data-lenis-prevent></div>
+  <div class="drawer__foot">
+    <div class="row"><span>Sous-total</span><span id="cartSub">0 €</span></div>
+    <div class="row"><span>Livraison</span><span>Offerte</span></div>
+    <div class="row total"><span>Total TTC</span><b id="cartTotal">0 €</b></div>
+    <button class="btn btn--gold" id="checkoutBtn" data-cursor>Passer commande
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+  </div>
+</aside>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></i><span id="toastMsg"></span></div>
+<div class="cursor" id="cursor"><div class="cursor__ring"></div><div class="cursor__dot"></div></div>
+
+<!-- ================= LIBRARIES ================= -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script>
+<script>
+/* =====================================================================
+   WOOKAH® Oak Crystal — Scrollytelling 3D
+   Three.js r128 · GSAP 3.12 + ScrollTrigger · Lenis
+   Tout le modèle est procédural (aucun asset externe) → le fichier
+   fonctionne en double-cliquant dessus (file://).
+   ===================================================================== */
+(() => {
+'use strict';
+
+/* ---------------------------------------------------------------------
+   0. UTILS
+--------------------------------------------------------------------- */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const damp = (a, b, lambda, dt) => lerp(a, b, 1 - Math.exp(-lambda * dt));
+const TAU = Math.PI * 2;
+const nextFrame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const euro = n => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FINE_POINTER = matchMedia('(hover: hover) and (pointer: fine)').matches;
+const layoutMode = () => {
+  const w = innerWidth, h = innerHeight;
+  if (w < 768) return 'mobile';
+  if (w < 1024 || w / h < 1.15) return 'tablet';
+  return 'desktop';
+};
+const mkCanvas = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+
+/* ---------------------------------------------------------------------
+   1. GUARDS, GSAP, LENIS
+--------------------------------------------------------------------- */
+if (!window.gsap || !window.ScrollTrigger) {
+  console.error('[WOOKAH] GSAP / ScrollTrigger introuvable (vérifiez la connexion aux CDN).');
+  document.body.classList.remove('is-loading');
+  const l = $('#loader'); if (l) l.remove();
+  return;
+}
+gsap.registerPlugin(ScrollTrigger);
+ScrollTrigger.config({ ignoreMobileResize: true });
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+window.scrollTo(0, 0);
+
+let lenis = null;
+if (window.Lenis) {
+  lenis = new Lenis({ lerp: 0.085, smoothWheel: true, wheelMultiplier: 0.95, touchMultiplier: 1.5 });
+  lenis.on('scroll', ScrollTrigger.update);
+  gsap.ticker.add(time => lenis.raf(time * 1000));
+  gsap.ticker.lagSmoothing(0);
+  lenis.stop();
+}
+const scrollToY = (y, duration = 2.2) => {
+  if (lenis) lenis.scrollTo(y, { duration, easing: t => 1 - Math.pow(1 - t, 4) });
+  else window.scrollTo({ top: y, behavior: 'smooth' });
+};
+
+/* ---------------------------------------------------------------------
+   2. LOADER
+--------------------------------------------------------------------- */
+const LD = { v: 0, bar: $('#loaderBar'), count: $('#loaderCount'), step: $('#loaderStep') };
+gsap.to('.loader__word span', { y: 0, duration: 1.1, stagger: 0.06, ease: 'expo.out', delay: 0.1 });
+function progress(v, label) {
+  if (label) LD.step.textContent = label;
+  gsap.to(LD, {
+    v, duration: 0.6, ease: 'power2.out', overwrite: true,
+    onUpdate() {
+      LD.bar.style.transform = `scaleX(${LD.v})`;
+      LD.count.textContent = String(Math.round(LD.v * 100)).padStart(3, '0');
+    }
+  });
+}
+
+/* ---------------------------------------------------------------------
+   3. RENDERER
+--------------------------------------------------------------------- */
+const canvas = $('#webgl');
+let renderer = null;
+const HAS_GL = (() => {
+  if (!window.THREE) return false;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+    return true;
+  } catch (e) { console.warn('[WOOKAH] WebGL indisponible', e); return false; }
+})();
+if (!HAS_GL) document.documentElement.classList.add('no-webgl');
+
+let pixelRatioCap = layoutMode() === 'mobile' ? 1.5 : 2;
+const pr = () => Math.min(window.devicePixelRatio || 1, pixelRatioCap);
+if (HAS_GL) {
+  renderer.setPixelRatio(pr());
+  renderer.setSize(innerWidth, innerHeight, false);
+  renderer.setClearColor(0x000000, 0);
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+}
+const MAX_ANISO = HAS_GL ? renderer.capabilities.getMaxAnisotropy() : 1;
+
+/* ---------------------------------------------------------------------
+   4. PROCEDURAL TEXTURES
+--------------------------------------------------------------------- */
+// Bruit de valeur périodique en X (pour des textures qui bouclent autour des tours)
+function makeNoise(seed = 1) {
+  let s = (seed * 9973) % 2147483647 || 1;
+  const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const p = new Uint8Array(256), perm = new Uint16Array(512), vals = new Float32Array(256);
+  for (let i = 0; i < 256; i++) { p[i] = i; vals[i] = rnd(); }
+  for (let i = 255; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); const t = p[i]; p[i] = p[j]; p[j] = t; }
+  for (let i = 0; i < 512; i++) perm[i] = p[i & 255];
+  const fade = t => t * t * (3 - 2 * t);
+  function n2(x, y, px) {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+    const x0 = ((xi % px) + px) % px, x1 = (x0 + 1) % px;
+    const y0 = yi & 255, y1 = (yi + 1) & 255;
+    const a = vals[perm[perm[x0 & 255] + y0]], b = vals[perm[perm[x1 & 255] + y0]];
+    const c = vals[perm[perm[x0 & 255] + y1]], d = vals[perm[perm[x1 & 255] + y1]];
+    const u = fade(xf), v = fade(yf);
+    return (a + (b - a) * u) + ((c + (d - c) * u) - (a + (b - a) * u)) * v;
+  }
+  function fbm(x, y, px, oct = 4) {
+    let amp = 0.5, f = 1, sum = 0, norm = 0;
+    for (let o = 0; o < oct; o++) { sum += amp * n2(x * f, y * f, px * f); norm += amp; amp *= 0.5; f *= 2; }
+    return sum / norm;
+  }
+  return { n2, fbm, rnd };
+}
+
+// Bois noble : cernes, pores, maillures (rayons médullaires du chêne) + bump
+function woodTextures({ w = 512, h = 1024, seed = 7, base, dark, light, rings = 22, fleckAmt = 1, warpAmt = 3.4, lateAmt = 0.8 }) {
+  const N = makeNoise(seed);
+  const c = mkCanvas(w, h), cb = mkCanvas(w, h);
+  const ctx = c.getContext('2d'), ctxb = cb.getContext('2d');
+  const img = ctx.createImageData(w, h), bimg = ctxb.createImageData(w, h);
+  const d = img.data, bd = bimg.data;
+  for (let y = 0; y < h; y++) {
+    const v = y / h;
+    for (let x = 0; x < w; x++) {
+      const u = x / w;
+      const warp = N.fbm(u * 4, v * 2.2, 4, 4);
+      const t = u * rings + warp * warpAmt + Math.sin(u * TAU * 2 + v * 5.0) * 0.18;
+      const f = t - Math.floor(t);
+      const late = sstep(0.55, 0.78, f) * (1 - sstep(0.8, 0.98, f));
+      const pore = Math.max(0, N.n2(u * 160, v * 26, 160) - 0.62) * 2.4;
+      const fleck = Math.max(0, N.n2(u * 48 + 11, v * 90, 48) - 0.8) * 3.5 * fleckAmt;
+      const tone = clamp(late * lateAmt + pore * 0.5, 0, 1);
+      const lum = 1 + (warp - 0.5) * 0.24;
+      const i = (y * w + x) * 4;
+      d[i]     = clamp(lerp(lerp(base[0], dark[0], tone), light[0], fleck * 0.6) * lum, 0, 255);
+      d[i + 1] = clamp(lerp(lerp(base[1], dark[1], tone), light[1], fleck * 0.6) * lum, 0, 255);
+      d[i + 2] = clamp(lerp(lerp(base[2], dark[2], tone), light[2], fleck * 0.6) * lum, 0, 255);
+      d[i + 3] = 255;
+      const bv = clamp(255 * (1 - tone * 0.9 - pore * 0.25 + fleck * 0.15), 0, 255);
+      bd[i] = bd[i + 1] = bd[i + 2] = bv; bd[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0); ctxb.putImageData(bimg, 0, 0);
+  const map = new THREE.CanvasTexture(c);
+  map.encoding = THREE.sRGBEncoding; map.wrapS = THREE.RepeatWrapping; map.anisotropy = MAX_ANISO;
+  const bump = new THREE.CanvasTexture(cb); bump.wrapS = THREE.RepeatWrapping;
+  return { map, bump };
+}
+
+// Acier brossé (stries horizontales → brossage circulaire sur les pièces tournées)
+function brushedTexture(size = 512, seed = 3) {
+  const N = makeNoise(seed);
+  const c = mkCanvas(size, size), ctx = c.getContext('2d');
+  for (let y = 0; y < size; y++) {
+    const g = 205 + (N.rnd() - 0.5) * 46;
+    ctx.fillStyle = `rgb(${g},${g},${g})`; ctx.fillRect(0, y, size, 1);
+  }
+  for (let k = 0; k < 900; k++) {
+    const g = N.rnd() > 0.5 ? 255 : 150;
+    ctx.globalAlpha = 0.06 + N.rnd() * 0.18;
+    ctx.fillStyle = `rgb(${g},${g},${g})`;
+    ctx.fillRect(N.rnd() * size, Math.floor(N.rnd() * size), 40 + N.rnd() * size * 0.8, 1);
+  }
+  ctx.globalAlpha = 1;
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = MAX_ANISO;
+  return t;
+}
+
+function speckleTexture(size, base, spread, seed, dotsDark = 0.08) {
+  const N = makeNoise(seed);
+  const c = mkCanvas(size, size), ctx = c.getContext('2d');
+  const img = ctx.createImageData(size, size), d = img.data;
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    const n = N.fbm(x / size * 8, y / size * 8, 8, 4);
+    const r = N.rnd();
+    const k = 1 + (n - 0.5) * spread - (r < dotsDark ? 0.18 : 0) + (r > 0.985 ? 0.15 : 0);
+    const i = (y * size + x) * 4;
+    d[i] = clamp(base[0] * k, 0, 255); d[i + 1] = clamp(base[1] * k, 0, 255); d[i + 2] = clamp(base[2] * k, 0, 255); d[i + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  const t = new THREE.CanvasTexture(c);
+  t.encoding = THREE.sRGBEncoding; t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
+// Cuir pleine fleur cousu (grain + couture)
+function leatherTexture(base, seed) {
+  const w = 256, h = 512, N = makeNoise(seed);
+  const c = mkCanvas(w, h), ctx = c.getContext('2d');
+  const img = ctx.createImageData(w, h), d = img.data;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const cell = N.n2(x / w * 64, y / h * 128, 64);
+    const k = 1 + (N.fbm(x / w * 6, y / h * 12, 6, 3) - 0.5) * 0.35 - Math.pow(cell, 6) * 0.35;
+    const i = (y * w + x) * 4;
+    d[i] = clamp(base[0] * k, 0, 255); d[i + 1] = clamp(base[1] * k, 0, 255); d[i + 2] = clamp(base[2] * k, 0, 255); d[i + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  ctx.strokeStyle = 'rgba(0,0,0,.55)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(w * 0.5, 0); ctx.lineTo(w * 0.5, h); ctx.stroke();
+  ctx.strokeStyle = 'rgba(236,214,170,.85)'; ctx.lineWidth = 2.2; ctx.setLineDash([9, 7]);
+  [w * 0.5 - 9, w * 0.5 + 9].forEach(x => { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); });
+  const t = new THREE.CanvasTexture(c);
+  t.encoding = THREE.sRGBEncoding; t.wrapS = THREE.RepeatWrapping;
+  return t;
+}
+
+// Taille au diamant : champ de hauteur (étoiles "pinwheel", éventails, bande crantée, cannelures) → normal map
+function crystalHeight(u, v) {
+  const y = v * 3.0;
+  if (y > 2.12 || y < 0.03) return 0;
+  const tiles = 5, tileW = TAU * 1.0 / tiles;
+  const tu = u * tiles, fu = tu - Math.floor(tu);
+  let h = 0;
+  const dx = (fu - 0.5) * tileW, dy = y - 0.64, r = Math.hypot(dx, dy);
+  if (r < 0.6) {
+    const a = Math.atan2(dy, dx) + r * 1.9;
+    const s = a / TAU * 24, tri = Math.abs(s - Math.floor(s) - 0.5) * 2;
+    h = Math.max(h, (1 - tri) * (1 - sstep(0.36, 0.6, r)) * sstep(0.02, 0.1, r));
+  }
+  if (r < 0.1) h = Math.max(h, (1 - r / 0.1) * 0.6);
+  const ex = (fu < 0.5 ? fu : fu - 1) * tileW, fy = y - 0.02;
+  if (fy > 0) {
+    const len = Math.hypot(ex, fy), a2 = Math.atan2(ex, fy);
+    if (Math.abs(a2) < 0.6 && len < 1.55) {
+      const s2 = (a2 / 0.6) * 5, tri2 = Math.abs(s2 - Math.round(s2)) * 2;
+      h = Math.max(h, (1 - tri2) * sstep(0.3, 0.55, len) * (1 - sstep(1.2, 1.55, len)) * 0.85);
+    }
+  }
+  if (y > 1.5 && y < 1.72) {
+    const k = Math.abs(((u * tiles * 9) % 1) - 0.5) * 2, m = Math.abs((y - 1.5) / 0.22 - 0.5) * 2;
+    h = Math.max(h, (1 - Math.max(k, m)) * 0.9);
+  }
+  if (y > 1.72 && y < 2.12) {
+    const k = Math.abs(((u * 60) % 1) - 0.5) * 2;
+    h = Math.max(h, (1 - k) * (1 - sstep(1.92, 2.12, y)) * sstep(1.72, 1.8, y) * 0.7);
+  }
+  return h;
+}
+function crystalNormalMap(w = 1024, h = 512, strength = 4.2) {
+  const hm = new Float32Array(w * h);
+  for (let j = 0; j < h; j++) { const v = 1 - j / (h - 1); for (let i = 0; i < w; i++) hm[j * w + i] = crystalHeight(i / w, v); }
+  const c = mkCanvas(w, h), ctx = c.getContext('2d');
+  const img = ctx.createImageData(w, h), d = img.data;
+  for (let j = 0; j < h; j++) {
+    const ju = Math.max(0, j - 1), jd = Math.min(h - 1, j + 1);
+    for (let i = 0; i < w; i++) {
+      const il = (i - 1 + w) % w, ir = (i + 1) % w;
+      const nx = -(hm[j * w + ir] - hm[j * w + il]) * 0.5 * strength;
+      const ny = (hm[jd * w + i] - hm[ju * w + i]) * 0.5 * strength;
+      const inv = 1 / Math.sqrt(nx * nx + ny * ny + 1);
+      const k = (j * w + i) * 4;
+      d[k] = (nx * inv * 0.5 + 0.5) * 255; d[k + 1] = (ny * inv * 0.5 + 0.5) * 255; d[k + 2] = (inv * 0.5 + 0.5) * 255; d[k + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = THREE.RepeatWrapping; t.anisotropy = MAX_ANISO;
+  return t;
+}
+
+function drawSpaced(ctx, text, cx, cy, spacing) {
+  const widths = [...text].map(ch => ctx.measureText(ch).width);
+  const total = widths.reduce((a, b) => a + b, 0) + spacing * (text.length - 1);
+  let x = cx - total / 2;
+  [...text].forEach((ch, i) => { ctx.fillText(ch, x + widths[i] / 2, cy); x += widths[i] + spacing; });
+}
+
+// Gravure "WOOKAH" sur la bague Quick-Lock (décalque transparent)
+function ringDecalTexture() {
+  const c = mkCanvas(2048, 128), ctx = c.getContext('2d');
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '600 64px Cinzel, "Times New Roman", serif';
+  [0, 1024, 2048].forEach(x => {
+    ctx.fillStyle = 'rgba(255,255,255,.55)'; drawSpaced(ctx, 'WOOKAH', x, 67, 16);
+    ctx.fillStyle = 'rgba(16,16,18,.95)'; drawSpaced(ctx, 'WOOKAH', x, 64, 16);
+  });
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = MAX_ANISO;
+  return t;
+}
+// Médaillon inox gravé
+function medallionTexture() {
+  const s = 512, c = mkCanvas(s, s), ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(s * 0.42, s * 0.38, 10, s / 2, s / 2, s / 2);
+  g.addColorStop(0, '#f4f4f6'); g.addColorStop(0.7, '#b9bbc2'); g.addColorStop(1, '#8a8c93');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(s / 2, s / 2, s / 2, 0, TAU); ctx.fill();
+  for (let r = 40; r < s / 2; r += 3) { ctx.strokeStyle = `rgba(${r % 2 ? 255 : 0},${r % 2 ? 255 : 0},${r % 2 ? 255 : 0},.05)`; ctx.beginPath(); ctx.arc(s / 2, s / 2, r, 0, TAU); ctx.stroke(); }
+  ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(40,40,44,.7)'; ctx.beginPath(); ctx.arc(s / 2, s / 2, s / 2 - 26, 0, TAU); ctx.stroke();
+  ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(s / 2, s / 2, s / 2 - 40, 0, TAU); ctx.stroke();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '600 230px Cinzel, "Times New Roman", serif';
+  ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fillText('W', s / 2 + 3, s / 2 + 18);
+  ctx.fillStyle = 'rgba(30,30,34,.9)'; ctx.fillText('W', s / 2, s / 2 + 14);
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = MAX_ANISO;
+  return t;
+}
+// Façade du coffret : filets et marquage dorés
+function boxDecalTexture() {
+  const w = 512, h = 1440, c = mkCanvas(w, h), ctx = c.getContext('2d');
+  ctx.strokeStyle = '#e2c285'; ctx.fillStyle = '#e2c285';
+  ctx.lineWidth = 3; ctx.strokeRect(26, 26, w - 52, h - 52);
+  ctx.lineWidth = 1.2; ctx.strokeRect(40, 40, w - 80, h - 80);
+  [[40, 40], [w - 40, 40], [40, h - 40], [w - 40, h - 40]].forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, 8, 0, TAU); ctx.fill(); });
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '600 70px Cinzel, "Times New Roman", serif'; drawSpaced(ctx, 'WOOKAH', w / 2, h * 0.36, 12);
+  ctx.font = '400 26px Cinzel, "Times New Roman", serif'; drawSpaced(ctx, '®', w / 2 + 196, h * 0.36 - 30, 0);
+  ctx.fillRect(w / 2 - 70, h * 0.36 + 60, 140, 2);
+  ctx.font = '500 30px Cinzel, "Times New Roman", serif'; drawSpaced(ctx, 'OAK CRYSTAL', w / 2, h * 0.36 + 110, 9);
+  ctx.font = '400 20px "Plus Jakarta Sans", sans-serif'; drawSpaced(ctx, 'THE PUREST DRAW', w / 2, h * 0.86, 8);
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = MAX_ANISO;
+  return t;
+}
+// Diffuseur perforé du plongeur
+function diffuserTexture() {
+  const c = mkCanvas(256, 64), ctx = c.getContext('2d');
+  ctx.fillStyle = '#d6d7db'; ctx.fillRect(0, 0, 256, 64);
+  ctx.fillStyle = '#1a1a1d';
+  for (let i = 0; i < 12; i++) { ctx.beginPath(); ctx.ellipse(10 + i * 21.3, 22, 3.2, 8, 0, 0, TAU); ctx.fill(); ctx.beginPath(); ctx.ellipse(20 + i * 21.3, 44, 3.2, 8, 0, 0, TAU); ctx.fill(); }
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.wrapS = THREE.RepeatWrapping;
+  return t;
+}
+// Régulateur de chaleur : ouïes de ventilation
+function hmdTexture() {
+  const c = mkCanvas(512, 128), ctx = c.getContext('2d');
+  ctx.fillStyle = '#d9dade'; ctx.fillRect(0, 0, 512, 128);
+  ctx.fillStyle = '#121214';
+  for (let i = 0; i < 16; i++) { const x = i * 32 + 8; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, 40, 16, 54, 8) : ctx.rect(x, 40, 16, 54); ctx.fill(); }
+  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(0, 12, 512, 3); ctx.fillRect(0, 112, 512, 3);
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.wrapS = THREE.RepeatWrapping;
+  return t;
+}
+// Filetage de la bague
+function threadTexture() {
+  const c = mkCanvas(64, 256), ctx = c.getContext('2d');
+  for (let y = 0; y < 256; y++) { const g = 120 + 120 * (0.5 + 0.5 * Math.sin(y / 256 * TAU * 14)); ctx.fillStyle = `rgb(${g},${g},${g})`; ctx.fillRect(0, y, 64, 1); }
+  return new THREE.CanvasTexture(c);
+}
+function radialTexture(size, stops) {
+  const c = mkCanvas(size, size), ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  stops.forEach(([o, col]) => g.addColorStop(o, col));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, size, size);
+  return new THREE.CanvasTexture(c);
+}
+
+/* ---------------------------------------------------------------------
+   5. STUDIO ENVIRONMENT (softboxes → PMREM + cube de réfraction)
+--------------------------------------------------------------------- */
+function buildEnvironment() {
+  const env = new THREE.Scene();
+  const room = new THREE.Mesh(new THREE.SphereGeometry(40, 32, 16),
+    new THREE.MeshBasicMaterial({ color: 0x07070a, side: THREE.BackSide, toneMapped: false }));
+  env.add(room);
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(30, 48), new THREE.MeshBasicMaterial({ color: 0x14110d, toneMapped: false }));
+  floor.rotation.x = -Math.PI / 2; floor.position.y = -12; env.add(floor);
+  const panel = (w, h, color, k, pos) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+      new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(k), side: THREE.DoubleSide, toneMapped: false }));
+    m.position.set(...pos); m.lookAt(0, 0, 0); env.add(m); return m;
+  };
+  panel(9, 13, 0xffd49a, 4.0, [-13, 7, 9]);     // Key softbox or chaud
+  panel(3, 18, 0xffffff, 3.0, [14, 1, 5]);      // Strip blanc (fill)
+  panel(16, 2.2, 0xffb85c, 3.2, [0, -9, -12]);  // Rim doré contre-plongée
+  panel(12, 12, 0xffffff, 1.6, [0, 16, 0]);     // Plafond diffus
+  panel(2.2, 16, 0xffe2b8, 2.2, [-7, 2, -14]);  // Strip arrière
+  panel(2, 10, 0xbfd0ff, 1.2, [11, 4, -10]);    // Accent froid discret
+  // petits "strobes" : éclats ponctuels dans l'inox et les facettes du cristal
+  [[-9, 12, 4], [10, 9, 8], [-12, -3, 7], [6, -6, 11], [12, 13, -3], [-4, 3, 14], [4, 15, 6], [-14, 8, -6]]
+    .forEach(p => panel(1.3, 1.3, 0xfff3e0, 7.5, p));
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const envMap = pmrem.fromScene(env, 0.035).texture;
+  const cubeRT = new THREE.WebGLCubeRenderTarget(256, { format: THREE.RGBFormat, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
+  const cubeCam = new THREE.CubeCamera(0.1, 100, cubeRT);
+  env.add(cubeCam); cubeCam.update(renderer, env);
+  cubeRT.texture.mapping = THREE.CubeRefractionMapping;
+  pmrem.dispose();
+  return { envMap, refractMap: cubeRT.texture };
+}
+
+/* ---------------------------------------------------------------------
+   6. GEOMETRY HELPERS
+--------------------------------------------------------------------- */
+const V2 = (x, y) => new THREE.Vector2(x, y);
+function smooth(ctrl, n) {
+  return new THREE.SplineCurve(ctrl.map(p => V2(p[0], p[1]))).getSpacedPoints(n).map(v => [Math.max(0, v.x), v.y]);
+}
+function lathe(points, segs = 64) { return new THREE.LatheGeometry(points.map(p => V2(p[0], p[1])), segs); }
+function mesh(geo, mat, x = 0, y = 0, z = 0) { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); return m; }
+
+/* ---------------------------------------------------------------------
+   7. MATERIALS
+--------------------------------------------------------------------- */
+const M = {};
+function buildMaterials(T, ENV) {
+  // Acier brossé V2A
+  M.steel = new THREE.MeshStandardMaterial({
+    color: 0xdcdde2, metalness: 0.95, roughness: 0.15, envMapIntensity: 1.25,
+    roughnessMap: T.brushed, bumpMap: T.brushed, bumpScale: 0.0012
+  });
+  M.steelSatin = new THREE.MeshStandardMaterial({ color: 0xc9cbd1, metalness: 0.92, roughness: 0.32, envMapIntensity: 1.1, bumpMap: T.brushed, bumpScale: 0.001 });
+  M.thread = new THREE.MeshStandardMaterial({ color: 0xb8bac0, metalness: 0.9, roughness: 0.35, bumpMap: T.thread, bumpScale: 0.012 });
+  M.diffuser = new THREE.MeshStandardMaterial({ map: T.diffuser, metalness: 0.9, roughness: 0.28 });
+  M.hmd = new THREE.MeshStandardMaterial({ map: T.hmd, metalness: 0.9, roughness: 0.22, envMapIntensity: 1.2 });
+  M.medal = new THREE.MeshStandardMaterial({ map: T.medal, metalness: 0.75, roughness: 0.28, envMapIntensity: 2 });
+  M.ringText = new THREE.MeshStandardMaterial({ map: T.ringText, transparent: true, metalness: 0.6, roughness: 0.45, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
+  M.rubber = new THREE.MeshStandardMaterial({ color: 0x111113, roughness: 0.62, metalness: 0 });
+  // Chêne massif (vernis satiné → clearcoat doux)
+  const wood = (tex, rough = 0.46) => new THREE.MeshPhysicalMaterial({
+    map: tex.map, bumpMap: tex.bump, bumpScale: 0.006, roughness: rough, metalness: 0,
+    clearcoat: 0.38, clearcoatRoughness: 0.3, envMapIntensity: 0.85
+  });
+  M.wood = wood(T.oak);
+  M.walnut = wood(T.walnut, 0.42);
+  M.ebony = wood(T.ebony, 0.38);
+  M.clay = new THREE.MeshStandardMaterial({ map: T.clay, roughness: 0.86, metalness: 0 });
+  M.glazeBlack = new THREE.MeshPhysicalMaterial({ color: 0x0d0d0f, roughness: 0.16, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.08 });
+  M.leatherCognac = new THREE.MeshStandardMaterial({ map: T.leatherCognac, roughness: 0.62, metalness: 0 });
+  M.leatherNoir = new THREE.MeshStandardMaterial({ map: T.leatherNoir, roughness: 0.55, metalness: 0 });
+  // Cristal de Bohême : transmission 0.95, IOR 1.52, taille diamant (normal map)
+  const crystal = (color, transmission, side, envI, nScale) => new THREE.MeshPhysicalMaterial({
+    color, metalness: 0, roughness: 0.03, transmission, ior: 1.52, transparent: true,
+    clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: envI, side, depthWrite: false,
+    normalMap: T.cut, normalScale: new THREE.Vector2(nScale, nScale)
+  });
+  M.crystal = crystal(0xffffff, 0.95, THREE.FrontSide, 3.2, 1.5);
+  M.crystalBack = crystal(0xffffff, 0.97, THREE.BackSide, 1.6, 0.8);
+  // Couche de réfraction (IOR 1.52) perturbée par la taille → éclats lumineux à travers le cristal
+  M.refract = new THREE.MeshPhongMaterial({
+    color: 0x000000, specular: 0x000000, shininess: 1, envMap: ENV.refractMap, refractionRatio: 1 / 1.52,
+    combine: THREE.AddOperation, reflectivity: 1, normalMap: T.cut, normalScale: new THREE.Vector2(1.8, 1.8),
+    transparent: true, opacity: 0.42, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false
+  });
+  const tint = (hex, tr) => {
+    const f = M.crystal.clone(); f.color.set(hex); f.transmission = tr;
+    const b = M.crystalBack.clone(); b.color.set(hex); b.transmission = Math.min(0.97, tr + 0.04);
+    const r = M.refract.clone(); r.opacity = 0.3;
+    return { front: f, back: b, refr: r };
+  };
+  M.crystalSmoke = tint(0x8d939e, 0.84);
+  M.crystalAmber = tint(0xe0a45a, 0.84);
+  // Coffret
+  M.lacquer = new THREE.MeshPhysicalMaterial({ color: 0x040405, roughness: 0.55, metalness: 0.05, clearcoat: 0.55, clearcoatRoughness: 0.35, envMapIntensity: 0.45 });
+  M.velvet = new THREE.MeshStandardMaterial({ color: 0x160307, roughness: 1, metalness: 0, envMapIntensity: 0.3 });
+  M.gold = new THREE.MeshStandardMaterial({ color: 0xd8b26e, metalness: 1, roughness: 0.24, envMapIntensity: 1.3 });
+  M.boxDecal = new THREE.MeshStandardMaterial({ map: T.boxDecal, emissiveMap: T.boxDecal, emissive: 0xffffff, emissiveIntensity: 0.22, transparent: true, metalness: 0.85, roughness: 0.3, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, envMapIntensity: 1.6 });
+}
+
+/* ---------------------------------------------------------------------
+   8. HOOKAH BUILDER (coordonnées : base du vase = y 0, sommet ≈ 8.06)
+--------------------------------------------------------------------- */
+const CENTER_Y = 4.0;
+function buildHookah() {
+  const root = new THREE.Group(); root.name = 'assembly';
+  const parts = {}, anchors = {};
+
+  /* --- VASE cristal --- */
+  const vase = new THREE.Group(); vase.name = 'vase';
+  const vProf = [[0, 0], [0.5, 0]].concat(smooth([
+    [0.5, 0], [0.78, 0.04], [0.95, 0.16], [1.05, 0.38], [1.08, 0.62], [1.04, 0.9], [0.94, 1.18],
+    [0.8, 1.48], [0.66, 1.78], [0.54, 2.1], [0.47, 2.42], [0.44, 2.72], [0.435, 3.0]
+  ], 90).slice(1));
+  const vGeo = lathe(vProf, 112);
+  { const pos = vGeo.attributes.position, uv = vGeo.attributes.uv; for (let i = 0; i < pos.count; i++) uv.setY(i, pos.getY(i) / 3.0); }
+  const vBack = mesh(vGeo, M.crystalBack); vBack.renderOrder = 2; vBack.userData.crystal = 'back';
+  const vRefr = mesh(vGeo, M.refract); vRefr.scale.set(0.972, 0.99, 0.972); vRefr.renderOrder = 3; vRefr.userData.crystal = 'refr';
+  const vFront = mesh(vGeo, M.crystal); vFront.renderOrder = 4; vFront.userData.crystal = 'front';
+  const lip = mesh(new THREE.TorusGeometry(0.435, 0.024, 12, 96), M.crystal, 0, 3.0, 0); lip.rotation.x = Math.PI / 2; lip.renderOrder = 4; lip.userData.crystal = 'front';
+  const puck = mesh(new THREE.CylinderGeometry(0.62, 0.66, 0.13, 72), M.crystal, 0, 0.07, 0); puck.renderOrder = 4; puck.userData.crystal = 'front';
+  vase.add(vBack, vRefr, vFront, lip, puck);
+  parts.vase = vase;
+
+  /* --- PLONGEUR inox + diffuseur --- */
+  const stem = new THREE.Group(); stem.name = 'stem';
+  stem.add(mesh(new THREE.CylinderGeometry(0.045, 0.045, 2.55, 24, 1, true), M.steel, 0, 3.02 - 1.275, 0));
+  stem.add(mesh(new THREE.CylinderGeometry(0.078, 0.078, 0.26, 36, 1, true), M.diffuser, 0, 0.47, 0));
+  stem.add(mesh(new THREE.CylinderGeometry(0.078, 0.052, 0.05, 36), M.steel, 0, 0.315, 0));
+  stem.add(mesh(new THREE.CylinderGeometry(0.052, 0.078, 0.04, 36), M.steel, 0, 0.62, 0));
+  stem.add(mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.03, 48), M.steelSatin, 0, 3.0, 0));
+  parts.stem = stem;
+
+  /* --- BAGUE QUICK-LOCK + connecteurs --- */
+  const ring = new THREE.Group(); ring.name = 'ring';
+  ring.add(mesh(lathe([[0.4, 3.0], [0.46, 3.0], [0.476, 3.012], [0.479, 3.1], [0.476, 3.188], [0.46, 3.2], [0.4, 3.2], [0.4, 3.0]], 112), M.steel));
+  ring.add(mesh(new THREE.CylinderGeometry(0.4805, 0.4805, 0.12, 128, 1, true, Math.PI, TAU), M.ringText, 0, 3.1, 0));
+  ring.add(mesh(new THREE.CylinderGeometry(0.425, 0.425, 0.15, 64, 1, true), M.thread, 0, 2.93, 0));
+  const oring = mesh(new THREE.TorusGeometry(0.432, 0.016, 10, 72), M.rubber, 0, 2.995, 0); oring.rotation.x = Math.PI / 2; ring.add(oring);
+  ring.add(mesh(new THREE.CylinderGeometry(0.2, 0.24, 0.56, 36), M.steelSatin, 0, 3.48, 0));
+  // soupape de purge 360° (gauche)
+  const purge = new THREE.Group(); purge.position.set(-0.16, 3.42, 0); purge.rotation.z = 0.8;
+  purge.add(mesh(new THREE.CylinderGeometry(0.05, 0.058, 0.62, 24), M.steel, 0, 0.31, 0));
+  purge.add(mesh(new THREE.CylinderGeometry(0.074, 0.074, 0.07, 36), M.steel, 0, 0.45, 0));
+  purge.add(mesh(new THREE.CylinderGeometry(0.084, 0.07, 0.1, 36), M.steel, 0, 0.55, 0));
+  purge.add(mesh(new THREE.SphereGeometry(0.084, 32, 16, 0, TAU, 0, Math.PI / 2), M.steel, 0, 0.6, 0));
+  ring.add(purge);
+  // raccord tuyau incliné (droite)
+  const hose = new THREE.Group(); hose.position.set(0.16, 3.42, 0); hose.rotation.z = -0.8;
+  hose.add(mesh(new THREE.CylinderGeometry(0.05, 0.058, 0.66, 24), M.steel, 0, 0.33, 0));
+  hose.add(mesh(new THREE.CylinderGeometry(0.078, 0.078, 0.08, 36), M.steel, 0, 0.5, 0));
+  for (let k = 0; k < 3; k++) hose.add(mesh(new THREE.CylinderGeometry(0.036, 0.058, 0.075, 28), M.steel, 0, 0.6 + k * 0.072, 0));
+  hose.add(mesh(new THREE.CylinderGeometry(0.036, 0.036, 0.06, 24), M.steel, 0, 0.83, 0));
+  ring.add(hose);
+  parts.ring = ring;
+
+  /* --- COLONNE chêne massif --- */
+  const column = new THREE.Group(); column.name = 'column';
+  const cProf = [[0, 3.2]].concat(smooth([
+    [0.4, 3.2], [0.44, 3.3], [0.462, 3.46], [0.458, 3.68], [0.43, 3.92], [0.36, 4.18], [0.27, 4.48],
+    [0.2, 4.84], [0.166, 5.22], [0.148, 5.72], [0.142, 6.2], [0.146, 6.48], [0.158, 6.6]
+  ], 120)).concat([[0, 6.6]]);
+  const colMesh = mesh(lathe(cProf, 112), M.wood); colMesh.userData.wood = true;
+  column.add(colMesh);
+  const bezel = mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.04, 48), M.steel, 0, 3.64, 0.448); bezel.rotation.x = Math.PI / 2;
+  const medal = mesh(new THREE.CircleGeometry(0.118, 48), M.medal, 0, 3.64, 0.4695);
+  column.add(bezel, medal);
+  column.add(mesh(new THREE.CylinderGeometry(0.168, 0.172, 0.07, 48), M.steel, 0, 6.57, 0));
+  parts.column = column;
+
+  /* --- ASSIETTE inox + adaptateur --- */
+  const plate = new THREE.Group(); plate.name = 'plate';
+  const pProf = [[0.17, 0], [0.34, 0], [0.8, 0.035], [1.1, 0.09], [1.28, 0.16], [1.35, 0.21], [1.372, 0.236], [1.346, 0.247],
+    [1.3, 0.217], [1.1, 0.132], [0.8, 0.077], [0.34, 0.046], [0.17, 0.046], [0.17, 0]].map(p => [p[0], p[1] + 6.6]);
+  plate.add(mesh(lathe(pProf, 144), M.steel));
+  plate.add(mesh(new THREE.CylinderGeometry(0.12, 0.15, 0.34, 40), M.steel, 0, 6.77, 0));
+  plate.add(mesh(new THREE.CylinderGeometry(0.075, 0.1, 0.1, 32), M.steel, 0, 6.99, 0));
+  parts.plate = plate;
+
+  /* --- FOYER terre cuite Vorclas + régulateur de chaleur --- */
+  const bowl = buildBowl(M.clay, true); bowl.position.y = 6.98; bowl.name = 'bowl';
+  const bowlWrap = new THREE.Group(); bowlWrap.add(bowl);
+  parts.bowl = bowlWrap;
+
+  Object.values(parts).forEach(p => root.add(p));
+
+  // Ancres (lignes de repère) — centre de chaque pièce
+  const anchor = (part, y) => { const o = new THREE.Object3D(); o.position.set(0, y, 0); parts[part].add(o); return o; };
+  anchors.plate = anchor('plate', 6.72);
+  anchors.column = anchor('column', 5.25);
+  anchors.ring = anchor('ring', 3.1);
+  anchors.vase = anchor('vase', 0.95);
+  root.position.y = -CENTER_Y;
+  return { root, parts, anchors };
+}
+
+function buildBowl(mat, withHmd) {
+  const g = new THREE.Group();
+  const prof = [[0, 0]].concat(smooth([[0.1, 0], [0.19, 0.02], [0.23, 0.1], [0.2, 0.24], [0.2, 0.32], [0.26, 0.44], [0.33, 0.56], [0.365, 0.66]], 60))
+    .concat([[0.365, 0.7], [0.3, 0.7], [0.29, 0.66], [0, 0.6]]);
+  g.add(mesh(lathe(prof, 72), mat));
+  if (withHmd) g.add(buildHmd(0.7));
+  return g;
+}
+function buildHmd(y0 = 0) {
+  const g = new THREE.Group(); g.position.y = y0;
+  g.add(mesh(new THREE.CylinderGeometry(0.39, 0.39, 0.24, 72, 1, true), M.hmd, 0, 0.12, 0));
+  g.add(mesh(new THREE.CylinderGeometry(0.39, 0.39, 0.012, 72), M.steel, 0, 0.004, 0));
+  g.add(mesh(new THREE.CylinderGeometry(0.3, 0.39, 0.07, 72), M.steel, 0, 0.275, 0));
+  g.add(mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.08, 32), M.steel, 0, 0.35, 0));
+  g.add(mesh(new THREE.SphereGeometry(0.07, 24, 12, 0, TAU, 0, Math.PI / 2), M.rubber, 0, 0.39, 0));
+  const handle = new THREE.Group(); handle.position.set(0.39, 0.13, 0);
+  handle.add(mesh(new THREE.BoxGeometry(0.1, 0.05, 0.12), M.steel, 0.05, 0, 0));
+  handle.add(mesh(new THREE.BoxGeometry(0.32, 0.06, 0.1), M.rubber, 0.26, -0.02, 0));
+  handle.rotation.z = -0.12;
+  g.add(handle);
+  return g;
+}
+
+// Manche (embout de tuyau) — bois ou cuir
+function buildMouthpiece(bodyMat) {
+  const g = new THREE.Group();
+  g.add(mesh(lathe([[0, 0], [0.05, 0], [0.068, 0.03], [0.074, 0.38], [0.1, 0.38], [0.1, 0.46], [0, 0.46]], 48), M.steel));
+  g.add(mesh(lathe([[0, 0.46]].concat(smooth([[0.108, 0.46], [0.135, 0.9], [0.158, 1.5], [0.152, 2.1], [0.12, 2.58]], 60)).concat([[0, 2.58]]), 64), bodyMat));
+  g.add(mesh(lathe([[0, 2.58], [0.1, 2.58], [0.1, 2.72], [0.07, 2.74], [0.066, 3.0], [0.045, 3.02], [0, 3.02]], 48), M.steel));
+  return g;
+}
+
+/* ---------------------------------------------------------------------
+   9. COFFRET DE LUXE (base, parois qui s'élèvent, porte, couvercle)
+--------------------------------------------------------------------- */
+const BOX = { HW: 1.52, HB: 8.5, T: 0.06 };
+function buildBox() {
+  const { HW, HB, T } = BOX;
+  const group = new THREE.Group(); group.position.y = -CENTER_Y; group.visible = false;
+  const faceMats = [M.gold, M.gold, M.gold, M.gold, M.lacquer, M.velvet]; // +x -x +y -y +z(ext) -z(int)
+  const plinth = new THREE.Group();
+  plinth.add(mesh(new THREE.BoxGeometry(3.42, 0.3, 3.42), M.lacquer, 0, -0.15, 0));
+  plinth.add(mesh(new THREE.BoxGeometry(3.46, 0.03, 3.46), M.gold, 0, -0.015, 0));
+  plinth.add(mesh(new THREE.BoxGeometry(3.46, 0.03, 3.46), M.gold, 0, -0.29, 0));
+  group.add(plinth);
+  const walls = [Math.PI, -Math.PI / 2, Math.PI / 2].map(ry => {
+    const pivot = new THREE.Group(); pivot.rotation.y = ry;
+    const grow = new THREE.Group(); grow.position.z = HW + T / 2;
+    grow.add(mesh(new THREE.BoxGeometry(2 * HW + 2 * T, HB, T), faceMats, 0, HB / 2, 0));
+    pivot.add(grow); group.add(pivot);
+    return grow;
+  });
+  const hinge = new THREE.Group(); hinge.position.set(-HW - T, 0, HW + T / 2);
+  const doorGrow = new THREE.Group();
+  doorGrow.add(mesh(new THREE.BoxGeometry(2 * HW + 2 * T, HB, T), faceMats, HW + T, HB / 2, 0));
+  doorGrow.add(mesh(new THREE.PlaneGeometry(2.62, 2.62 * 1440 / 512), M.boxDecal, HW + T, HB / 2, T / 2 + 0.003));
+  hinge.add(doorGrow); group.add(hinge);
+  const lid = new THREE.Group();
+  const LW = 2 * HW + 2 * T + 0.1;
+  lid.add(mesh(new THREE.BoxGeometry(LW, 0.28, LW), [M.gold, M.gold, M.lacquer, M.velvet, M.gold, M.gold], 0, 0.14, 0));
+  lid.add(mesh(new THREE.BoxGeometry(LW + 0.02, 0.025, LW + 0.02), M.gold, 0, 0.012, 0));
+  group.add(lid);
+  return { group, plinth, walls, hinge, doorGrow, lid };
+}
+function applyBoxState(b, st) {
+  b.group.visible = st.show > 0.002;
+  if (!b.group.visible) return;
+  const s = Math.max(0.001, st.show);
+  b.plinth.scale.set(0.35 + 0.65 * s, s, 0.35 + 0.65 * s);
+  const grow = (g, v) => { g.visible = v > 0.002; g.scale.y = Math.max(0.001, v); };
+  grow(b.walls[0], st.wBack); grow(b.walls[1], st.wSide); grow(b.walls[2], st.wSide); grow(b.doorGrow, st.wDoor);
+  b.hinge.rotation.y = -st.door * 1.85;
+  b.lid.visible = st.wDoor > 0.4;
+  b.lid.position.y = BOX.HB + st.lid * 12;
+  b.lid.rotation.z = st.lid * 0.22;
+  b.lid.rotation.x = st.lid * -0.12;
+}
+
+/* ---------------------------------------------------------------------
+   10. SCENE STATE (piloté par la timeline GSAP)
+--------------------------------------------------------------------- */
+const S = {
+  rot: 0, tilt: 0, cam: 0, idle: 1, light: 0,
+  exBowl: 0, exPlate: 0, exCol: 0, exRing: 0, exStem: 0, exVase: 0,
+  show: 0, wBack: 0, wSide: 0, wDoor: 0, door: 1, lid: 1,
+  out: 0
+};
+const EX = [ // clé d'état, pièce, distance d'éclatement, torsion, joint
+  ['exBowl', 'bowl', 2.4, 0.55, 3],
+  ['exPlate', 'plate', 1.6, -0.35, 2],
+  ['exCol', 'column', 0.85, 0.28, 1],
+  ['exRing', 'ring', 0.05, -0.22, 0],
+  ['exStem', 'stem', -1.0, 0.3, 0],
+  ['exVase', 'vase', -2.3, -0.25, 0]
+];
+const JOINTS = [ // hauteur, rayon (anneaux magnétiques)
+  [3.0, 0.5], [3.2, 0.5], [6.6, 0.26], [6.99, 0.22]
+];
+
+let scene, camera, hookah, box, modelRoot, lights = {}, particles, shadow, glows = [], ENV, TEX;
+
+function buildScene() {
+  scene = new THREE.Scene();
+  scene.environment = ENV.envMap;
+  camera = new THREE.PerspectiveCamera(28, innerWidth / innerHeight, 0.1, 200);
+
+  modelRoot = new THREE.Group();
+  scene.add(modelRoot);
+  hookah = buildHookah();
+  modelRoot.add(hookah.root);
+  box = buildBox();
+  modelRoot.add(box.group);
+
+  // Ombre de contact (suit le vase)
+  shadow = mesh(new THREE.PlaneGeometry(4.2, 4.2), new THREE.MeshBasicMaterial({
+    map: radialTexture(256, [[0, 'rgba(0,0,0,.85)'], [0.35, 'rgba(0,0,0,.45)'], [1, 'rgba(0,0,0,0)']]),
+    transparent: true, depthWrite: false, toneMapped: false
+  }));
+  shadow.rotation.x = -Math.PI / 2; modelRoot.add(shadow);
+
+  // Anneaux d'aimantation (flash au "clac" de chaque jonction)
+  JOINTS.forEach(([y, r]) => {
+    const g = new THREE.Group(); g.position.y = y - CENTER_Y;
+    const mat = new THREE.MeshBasicMaterial({ color: 0xffd9a0, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
+    const torus = new THREE.Mesh(new THREE.TorusGeometry(r, 0.01, 8, 96), mat); torus.rotation.x = Math.PI / 2;
+    const wave = new THREE.Mesh(new THREE.RingGeometry(r * 0.96, r * 1.06, 96), mat.clone()); wave.rotation.x = -Math.PI / 2;
+    torus.renderOrder = wave.renderOrder = 10;
+    g.add(torus, wave); modelRoot.add(g);
+    glows.push({ g, torus, wave, flash: 0 });
+  });
+
+  // Lumières studio : key or chaud, fill blanche, rim dorée en contre-plongée
+  lights.hemi = new THREE.HemisphereLight(0xfff1dd, 0x0a0a10, 0.28);
+  lights.key = new THREE.DirectionalLight(0xffc98a, 2.2); lights.key.position.set(-7, 8, 8);
+  lights.fill = new THREE.DirectionalLight(0xe8eeff, 0.65); lights.fill.position.set(8, 2, 6);
+  lights.rim = new THREE.SpotLight(0xffb347, 4.5, 60, 0.55, 0.85, 1.2); lights.rim.position.set(2.5, -8, -9);
+  lights.rim.target.position.set(0, 1.5, 0);
+  lights.top = new THREE.DirectionalLight(0xfff0d8, 0.9); lights.top.position.set(0, 12, -5);
+  lights.spark = new THREE.PointLight(0xffd7a0, 0, 12, 2); lights.spark.position.set(0, -0.8, 2.5);
+  scene.add(lights.hemi, lights.key, lights.fill, lights.rim, lights.rim.target, lights.top, lights.spark);
+
+  // Poussière dorée (bokeh)
+  const count = layoutMode() === 'mobile' ? 140 : 280;
+  const pos = new Float32Array(count * 3), seeds = new Float32Array(count);
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * TAU, r = 2.2 + Math.random() * 7;
+    pos[i * 3] = Math.cos(a) * r; pos[i * 3 + 1] = -7 + Math.random() * 15; pos[i * 3 + 2] = Math.sin(a) * r * 0.7 - 1;
+    seeds[i] = Math.random();
+  }
+  const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  particles = new THREE.Points(pg, new THREE.PointsMaterial({
+    size: 0.075, map: radialTexture(64, [[0, 'rgba(255,255,255,1)'], [0.25, 'rgba(255,230,180,.6)'], [1, 'rgba(255,200,120,0)']]),
+    color: 0xf1d9a4, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true, toneMapped: false
+  }));
+  particles.userData.seeds = seeds;
+  scene.add(particles);
+}
+
+/* ---------------------------------------------------------------------
+   11. CAMERA KEYFRAMES (responsive : cadrage calculé pour tenir à l'écran)
+   sx / sy = décalage écran du centre produit (fraction de la demi-largeur / hauteur)
+--------------------------------------------------------------------- */
+const KEYS = {
+  desktop: [
+    { fov: 26, H: 8.8, fh: 0.8, W: 3.2, fw: 0.34, sx: 0.38, sy: -0.02, elev: 5 },
+    { fov: 40, H: 13.4, fh: 0.8, W: 3.2, fw: 0.3, sx: 0, sy: -0.05, elev: 11 },
+    { fov: 30, H: 10.8, fh: 0.74, W: 7, fw: 0.62, sx: 0.36, sy: 0, elev: 9 }
+  ],
+  tablet: [
+    { fov: 28, H: 8.8, fh: 0.72, W: 3.2, fw: 0.42, sx: 0.42, sy: -0.02, elev: 5 },
+    { fov: 40, H: 13.4, fh: 0.66, W: 3.2, fw: 0.5, sx: 0, sy: 0.17, elev: 11 },
+    { fov: 30, H: 10.8, fh: 0.68, W: 7, fw: 0.5, sx: 0.42, sy: 0, elev: 9 }
+  ],
+  mobile: [
+    { fov: 30, H: 8.8, fh: 0.5, W: 3.2, fw: 0.8, sx: 0, sy: -0.36, elev: 5 },
+    { fov: 40, H: 13.4, fh: 0.58, W: 3.2, fw: 0.9, sx: 0, sy: 0.24, elev: 10 },
+    { fov: 32, H: 10.8, fh: 0.5, W: 7, fw: 0.96, sx: 0, sy: -0.34, elev: 9 }
+  ]
+};
+let CAMS = [], MODE = layoutMode();
+function computeCams() {
+  MODE = layoutMode();
+  const aspect = innerWidth / innerHeight;
+  CAMS = KEYS[MODE].map(k => {
+    const th = Math.tan(k.fov * Math.PI / 360);
+    const dist = Math.max(k.H / (2 * k.fh * th), k.W / (2 * k.fw * th * aspect));
+    return { fov: k.fov, dist, sx: k.sx, sy: k.sy, elev: k.elev * Math.PI / 180 };
+  });
+}
+function camAt(c) {
+  const i = clamp(Math.floor(c), 0, CAMS.length - 2), f = clamp(c - i, 0, 1);
+  const a = CAMS[i], b = CAMS[i + 1];
+  return { fov: lerp(a.fov, b.fov, f), dist: lerp(a.dist, b.dist, f), sx: lerp(a.sx, b.sx, f), sy: lerp(a.sy, b.sy, f), elev: lerp(a.elev, b.elev, f) };
+}
+
+/* ---------------------------------------------------------------------
+   12. GSAP SCROLLTRIGGER TIMELINE (unités = % du récit)
+   0-25  Hero · 25-65 Vue éclatée · 65-80 Réassemblage & coffret
+   80-100 Catalogue (trigger dédié sur #collection → S.out)
+--------------------------------------------------------------------- */
+let tl;
+function buildTimeline() {
+  tl = gsap.timeline({
+    defaults: { ease: 'none' },
+    scrollTrigger: { trigger: '#story', start: 'top top', end: 'bottom bottom', scrub: 1 }
+  });
+  tl.to({}, { duration: 80 }, 0);
+
+  // ── Section 1 · HERO (0 → 25)
+  tl.to(S, { rot: TAU, duration: 22, ease: 'sine.inOut' }, 0);
+  tl.to(S, { idle: 0, duration: 8 }, 14);
+  gsap.set('#scrollCue', { xPercent: -50 });
+  tl.to('#scrollCue', { autoAlpha: 0, y: 20, duration: 3 }, 0.5);
+  tl.to('#heroCopy', { autoAlpha: 0, y: -60, duration: 6, ease: 'power2.in' }, 12);
+
+  // ── Section 2 · EXPLODED VIEW (25 → 65)
+  tl.to(S, { cam: 1, duration: 14, ease: 'power2.inOut' }, 19);
+  tl.to(S, { light: 1, duration: 14, ease: 'power1.inOut' }, 20);
+  tl.to(S, { rot: TAU - 0.55, duration: 12, ease: 'power2.out' }, 22);
+  tl.to(S, { tilt: 0.14, duration: 12, ease: 'power2.inOut' }, 23);
+  const exIn = { duration: 15, ease: 'power3.inOut' };
+  tl.to(S, { exBowl: 1, ...exIn }, 24)
+    .to(S, { exPlate: 1, ...exIn }, 24.6)
+    .to(S, { exVase: 1, ...exIn }, 25)
+    .to(S, { exCol: 1, ...exIn }, 25.4)
+    .to(S, { exStem: 1, ...exIn }, 25.8)
+    .to(S, { exRing: 1, ...exIn }, 26);
+  tl.to(S, { rot: TAU + 0.5, duration: 24 }, 36);
+  tl.fromTo('#anatomyHead', { autoAlpha: 0, y: 26 }, { autoAlpha: 1, y: 0, duration: 4, ease: 'power2.out', immediateRender: false }, 26);
+  tl.to('#anatomyHead', { autoAlpha: 0, y: -26, duration: 3, ease: 'power2.in' }, 33.5);
+
+  // ── Section 3 · RE-ASSEMBLY & PACKAGING (65 → 80) — aspiration magnétique (power4.in)
+  tl.to(S, { tilt: 0, duration: 6, ease: 'power2.inOut' }, 59.5);
+  const exOut = { duration: 6.5, ease: 'power4.in' };
+  tl.to(S, { exVase: 0, ...exOut }, 60)
+    .to(S, { exStem: 0, ...exOut }, 60.4)
+    .to(S, { exRing: 0, ...exOut }, 60.6)
+    .to(S, { exCol: 0, ...exOut }, 61)
+    .to(S, { exPlate: 0, ...exOut }, 61.5)
+    .to(S, { exBowl: 0, ...exOut }, 62);
+  tl.to(S, { rot: TAU * 2 + 0.35, duration: 9, ease: 'power3.inOut' }, 60);
+  tl.to(S, { cam: 2, duration: 8, ease: 'power2.inOut' }, 64);
+  tl.to(S, { light: 2, duration: 8 }, 65);
+  tl.to(S, { show: 1, duration: 3, ease: 'expo.out' }, 68.5);
+  tl.to(S, { wBack: 1, duration: 3.5, ease: 'power3.out' }, 69);
+  tl.to(S, { wSide: 1, duration: 3.5, ease: 'power3.out' }, 69.6);
+  tl.to(S, { wDoor: 1, duration: 3.5, ease: 'power3.out' }, 70.2);
+  tl.to(S, { door: 0, duration: 4, ease: 'power2.inOut' }, 72.8);
+  tl.to(S, { lid: 0, duration: 3.2, ease: 'power3.in' }, 76);
+  tl.to(S, { rot: TAU * 2 + 0.8, duration: 11 }, 69);
+  tl.fromTo('#boxCopy', { autoAlpha: 0, y: 30 }, { autoAlpha: 1, y: 0, duration: 4, ease: 'power2.out', immediateRender: false }, 70.5);
+
+  // ── Section 4 · transition vers le catalogue (80 → 100)
+  gsap.to(S, {
+    out: 1, ease: 'none',
+    scrollTrigger: { trigger: '#collection', start: 'top bottom', end: 'top 12%', scrub: 1 }
+  });
+}
+function chapterY(i) {
+  const st = tl.scrollTrigger, range = st.end - st.start;
+  if (i === 0) return 0;
+  if (i === 1) return st.start + range * (48 / 80);
+  if (i === 2) return st.start + range * (79.6 / 80);
+  return $('#collection').offsetTop + innerHeight * 0.14;
+}
+
+/* ---------------------------------------------------------------------
+   13. HUD : cartes techniques + lignes de repère
+--------------------------------------------------------------------- */
+const HUD = { specs: [], railEl: $('#rail'), rail: $$('#rail li'), railFill: $('#railFill'), nav: $('#nav'), hud: $('#hud'), glow: $('#bgGlow'), chapter: -1 };
+const SPEC_PARTS = [['plate', 1.37], ['column', 0.17], ['ring', 0.5], ['vase', 1.08]];
+function initSpecs() {
+  const svg = $('#leaders'), NS = 'http://www.w3.org/2000/svg';
+  $$('.spec').forEach((el, i) => {
+    const path = document.createElementNS(NS, 'path');
+    const halo = document.createElementNS(NS, 'circle'); halo.setAttribute('class', 'halo');
+    const dot = document.createElementNS(NS, 'circle'); dot.setAttribute('class', 'dot');
+    svg.append(path, halo, dot);
+    HUD.specs.push({ el, path, halo, dot, y: null, w: 300, h: 200, shown: false });
+  });
+  measureSpecs();
+}
+function measureSpecs() { HUD.specs.forEach(s => { s.w = s.el.offsetWidth; s.h = s.el.offsetHeight; }); }
+function specVisibility(i, p) {
+  if (MODE === 'desktop') return sstep(33 + i * 3.4, 36.5 + i * 3.4, p) * (1 - sstep(56.5, 60.5, p));
+  const start = 32 + i * 7;
+  return sstep(start, start + 2, p) * (1 - sstep(start + 5.6, start + 7, p));
+}
+const _v = new THREE.Vector3(), _r = new THREE.Vector3();
+function updateSpecs(p, dt, t) {
+  if (!HAS_GL) return 0;
+  const W = innerWidth, H = innerHeight, side = MODE === 'desktop';
+  const bottoms = [-Infinity, -Infinity]; // empilement anti-chevauchement (gauche / droite)
+  let maxVis = 0;
+  _r.setFromMatrixColumn(camera.matrixWorld, 0).normalize();
+  const scale = modelRoot.scale.x;
+  HUD.specs.forEach((s, i) => {
+    const vis = HAS_GL ? specVisibility(i, p) * (1 - S.out) : 0;
+    if (vis < 0.002) {
+      if (s.shown) { s.el.style.visibility = 'hidden'; s.el.style.opacity = 0; s.path.style.opacity = 0; s.dot.style.opacity = 0; s.halo.style.opacity = 0; s.shown = false; s.y = null; }
+      return;
+    }
+    s.shown = true; maxVis = Math.max(maxVis, vis);
+    const [part, rad] = SPEC_PARTS[i];
+    const dir = side ? (i % 2 === 0 ? -1 : 1) : 1;
+    hookah.anchors[part].getWorldPosition(_v);
+    _v.addScaledVector(_r, dir * rad * scale).project(camera);
+    const ax = (_v.x * 0.5 + 0.5) * W, ay = (-_v.y * 0.5 + 0.5) * H;
+    let x, y, d;
+    if (side) {
+      const margin = Math.max(28, W * 0.045);
+      x = i % 2 === 0 ? margin : W - margin - s.w;
+      const col = i % 2;
+      const target = clamp(Math.max(ay - s.h * 0.5, bottoms[col] + 16), 84, H - s.h - 24);
+      s.y = s.y == null ? target : damp(s.y, target, 7, dt);
+      y = s.y; bottoms[col] = y + s.h;
+      const cx = i % 2 === 0 ? x + s.w : x, cy = y + s.h * 0.5, ex = cx + (i % 2 === 0 ? 34 : -34);
+      d = [[cx, cy], [ex, cy], [ax, ay]];
+    } else {
+      x = (W - s.w) / 2; y = H - s.h - 16;
+      d = [[W / 2, y], [W / 2, y - 20], [ax, ay]];
+    }
+    const len = Math.hypot(d[1][0] - d[0][0], d[1][1] - d[0][1]) + Math.hypot(d[2][0] - d[1][0], d[2][1] - d[1][1]);
+    const draw = sstep(0.25, 1, vis);
+    s.el.style.visibility = 'visible';
+    s.el.style.opacity = vis;
+    s.el.style.transform = `translate3d(${x.toFixed(1)}px,${(y + (1 - vis) * 22).toFixed(1)}px,0)`;
+    s.path.setAttribute('d', `M${d[0][0].toFixed(1)},${d[0][1].toFixed(1)} L${d[1][0].toFixed(1)},${d[1][1].toFixed(1)} L${d[2][0].toFixed(1)},${d[2][1].toFixed(1)}`);
+    s.path.style.strokeDasharray = len; s.path.style.strokeDashoffset = len * (1 - draw); s.path.style.opacity = vis;
+    const pulse = (t * 0.9 + i * 0.25) % 1;
+    s.dot.setAttribute('cx', ax); s.dot.setAttribute('cy', ay); s.dot.setAttribute('r', 3.2 * draw); s.dot.style.opacity = draw;
+    s.halo.setAttribute('cx', ax); s.halo.setAttribute('cy', ay); s.halo.setAttribute('r', 4 + pulse * 12); s.halo.style.opacity = draw * (1 - pulse) * 0.8;
+  });
+  return maxVis;
+}
+
+/* ---------------------------------------------------------------------
+   14. RENDER LOOP + PHYSIQUE (inertie de rotation, ressorts, aimantation)
+--------------------------------------------------------------------- */
+const phys = { spin: 0, spinV: 0, lean: 0, leanV: 0, sc: 1, scV: 0, shake: 0 };
+const pointer = { x: 0, y: 0, sx: 0, sy: 0 };
+const intro = { y: -2.4, s: 0.84, a: 0 };
+const prevEx = {};
+let lastScroll = 0, frameAvg = 1 / 60, frameN = 0, qualityLocked = false;
+
+function kick(strength, shake) { phys.scV += strength; phys.shake = Math.max(phys.shake, shake); }
+
+function renderFrame(time, deltaMs) {
+  const dt = clamp((deltaMs || 16.7) / 1000, 1 / 240, 1 / 20);
+  const t = time;
+  const p = tl ? tl.time() : 0;
+
+  // — vitesse de scroll (Lenis) → impulsions physiques
+  const sy = window.scrollY;
+  const vel = clamp(lenis ? lenis.velocity : (sy - lastScroll), -140, 140);
+  lastScroll = sy;
+  const spinT = REDUCED ? 0 : clamp(vel * 0.006, -0.75, 0.75);
+  const leanT = REDUCED ? 0 : clamp(-vel * 0.0016, -0.12, 0.12);
+  const sub = 2, h = dt / sub;
+  for (let k = 0; k < sub; k++) {
+    phys.spinV += (60 * (spinT - phys.spin) - 10 * phys.spinV) * h; phys.spin += phys.spinV * h;
+    phys.leanV += (70 * (leanT - phys.lean) - 11 * phys.leanV) * h; phys.lean += phys.leanV * h;
+    phys.scV += (220 * (1 - phys.sc) - 14 * phys.scV) * h; phys.sc += phys.scV * h;
+  }
+  phys.shake = Math.max(0, phys.shake - dt * 0.25);
+
+  pointer.sx = damp(pointer.sx, pointer.x, 3, dt);
+  pointer.sy = damp(pointer.sy, pointer.y, 3, dt);
+
+  if (HAS_GL) {
+    // — modèle
+    const sway = S.idle * (REDUCED ? 0 : Math.sin(t * 0.55) * 0.24);
+    modelRoot.rotation.x = S.tilt + phys.lean + pointer.sy * 0.05;
+    modelRoot.rotation.y = S.rot + sway + phys.spin + pointer.sx * 0.16 + S.out * 0.9;
+    modelRoot.position.y = intro.y + S.out * 1.6;
+    modelRoot.scale.setScalar(intro.s * phys.sc);
+
+    EX.forEach(([key, part, dist, twist, joint], i) => {
+      const e = S[key], obj = hookah.parts[part];
+      obj.position.y = e * dist + Math.sin(t * 0.9 + i * 1.3) * 0.045 * e;
+      obj.rotation.y = e * twist;
+      if (prevEx[key] !== undefined && prevEx[key] > 0.03 && e <= 0.03) { glows[joint].flash = 1; kick(0.32, 0.045); }
+      prevEx[key] = e;
+    });
+    shadow.position.y = hookah.parts.vase.position.y - CENTER_Y + 0.004;
+    shadow.material.opacity = 0.9 * (1 - S.show);
+
+    // — anneaux magnétiques : lueur d'approche + onde de choc au contact
+    const magnet = sstep(57, 61, p) * (1 - sstep(70, 72, p));
+    glows.forEach((g, i) => {
+      g.flash = Math.max(0, g.flash - dt * 1.6);
+      const ex = i === 0 ? Math.min(S.exVase, 1) : i === 1 ? S.exCol : i === 2 ? S.exPlate : S.exBowl;
+      const approach = magnet * sstep(0.45, 0.04, ex) * (ex > 0.03 ? 1 : 0);
+      g.torus.material.opacity = approach * 0.55 + g.flash * 0.9;
+      g.wave.material.opacity = g.flash * 0.7;
+      g.wave.scale.setScalar(1 + (1 - g.flash) * 1.6);
+      g.g.visible = g.torus.material.opacity > 0.003 || g.wave.material.opacity > 0.003;
+    });
+
+    // — coffret
+    const prevLid = box.lastLid, prevDoor = box.lastDoor;
+    applyBoxState(box, S);
+    if (prevLid !== undefined && prevLid > 0.02 && S.lid <= 0.02) kick(0.5, 0.08);
+    if (prevDoor !== undefined && prevDoor > 0.02 && S.door <= 0.02) kick(0.25, 0.04);
+    box.lastLid = S.lid; box.lastDoor = S.door;
+
+    // — éclairage dynamique
+    const ka = -0.78 + S.light * 0.32 + Math.sin(t * 0.18) * 0.12;
+    lights.key.position.set(Math.sin(ka) * 12, 7.5 + S.light * 0.8, Math.cos(ka) * 12);
+    lights.key.intensity = 2.1 + Math.sin(t * 0.4) * 0.12;
+    lights.rim.intensity = 4.2 + Math.min(S.light, 1) * 1.6;
+    const flashSum = glows.reduce((a, g) => a + g.flash, 0);
+    lights.spark.intensity = flashSum * 2.2;
+    renderer.toneMappingExposure = 1.04 + S.light * 0.02;
+
+    // — particules
+    const pa = particles.geometry.attributes.position, seeds = particles.userData.seeds;
+    for (let i = 0; i < seeds.length; i++) {
+      let y = pa.array[i * 3 + 1] + dt * (0.08 + seeds[i] * 0.16);
+      if (y > 8) y = -7;
+      pa.array[i * 3 + 1] = y;
+      pa.array[i * 3] += Math.sin(t * 0.3 + seeds[i] * 20) * dt * 0.04;
+    }
+    pa.needsUpdate = true;
+    particles.rotation.y = t * 0.02 + S.rot * 0.08;
+    particles.material.opacity = 0.55 * (1 - S.out);
+
+    // — caméra
+    const c = camAt(S.cam);
+    camera.fov = c.fov; camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+    const th = Math.tan(c.fov * Math.PI / 360), halfH = c.dist * th, halfW = halfH * camera.aspect;
+    const ce = Math.cos(c.elev + S.out * 0.25), se = Math.sin(c.elev + S.out * 0.25);
+    const shx = (Math.random() - 0.5) * phys.shake, shy = (Math.random() - 0.5) * phys.shake;
+    const tx = -c.sx * halfW - pointer.sx * 0.12 + shx;
+    const ty = -c.sy * halfH * ce + Math.sin(t * 0.5) * 0.04 + shy - pointer.sy * 0.08;
+    const tz = c.sy * halfH * se;
+    camera.position.set(tx, ty + se * c.dist, tz + ce * c.dist);
+    camera.lookAt(tx, ty, tz);
+    camera.updateMatrixWorld();
+
+    // — halo CSS derrière le produit
+    _v.set(0, modelRoot.position.y, 0).project(camera);
+    HUD.glow.style.transform = `translate3d(${((_v.x * 0.5 + 0.5) * innerWidth).toFixed(1)}px,${((-_v.y * 0.5 + 0.5) * innerHeight).toFixed(1)}px,0)`;
+    HUD.glow.style.opacity = 1 - S.out;
+    canvas.style.opacity = clamp(1 - S.out * 1.15, 0, 1);
+
+    if (S.out < 0.999 && !document.hidden) renderer.render(scene, camera);
+
+    // — qualité adaptative
+    if (!qualityLocked && t > 4) {
+      frameAvg = lerp(frameAvg, dt, 0.05); frameN++;
+      if (frameN > 120) {
+        if (frameAvg > 1 / 38 && pixelRatioCap > 1) { pixelRatioCap = Math.max(1, pixelRatioCap - 0.35); renderer.setPixelRatio(pr()); renderer.setSize(innerWidth, innerHeight, false); frameN = 0; }
+        else qualityLocked = true;
+      }
+    }
+  }
+
+  // — HUD
+  const cardsVis = updateSpecs(p, dt, t);
+  HUD.railEl.style.opacity = 1 - cardsVis;
+  HUD.hud.style.opacity = clamp(1 - S.out * 1.6, 0, 1);
+  HUD.hud.style.visibility = S.out > 0.95 ? 'hidden' : 'visible';
+  const chapter = S.out > 0.5 ? 3 : p < 25 ? 0 : p < 65 ? 1 : 2;
+  if (chapter !== HUD.chapter) { HUD.rail.forEach((li, i) => li.classList.toggle('is-active', i === chapter)); HUD.chapter = chapter; }
+  const docMax = document.documentElement.scrollHeight - innerHeight;
+  HUD.railFill.style.transform = `scaleY(${clamp(sy / Math.max(1, docMax), 0, 1)})`;
+  HUD.nav.classList.toggle('is-solid', S.out > 0.6);
+}
+
+/* ---------------------------------------------------------------------
+   15. VIGNETTES 3D DU CATALOGUE (rendues une fois via le même renderer)
+--------------------------------------------------------------------- */
+const THUMBS = {};
+function renderThumbnails() {
+  const ts = new THREE.Scene(); ts.environment = ENV.envMap;
+  const k = new THREE.DirectionalLight(0xffc98a, 2.3); k.position.set(-6, 8, 8);
+  const f = new THREE.DirectionalLight(0xe8eeff, 0.7); f.position.set(8, 2, 6);
+  const r = new THREE.DirectionalLight(0xffb347, 1.6); r.position.set(3, -4, -8);
+  ts.add(new THREE.HemisphereLight(0xfff1dd, 0x0a0a10, 0.3), k, f, r);
+  const cam = new THREE.PerspectiveCamera(22, 0.8, 0.1, 200);
+  const TW = 560, TH = 700;
+  const prevPR = renderer.getPixelRatio();
+  renderer.setPixelRatio(1); renderer.setSize(TW, TH, false);
+
+  const shoot = (key, obj, { elev = 8, pad = 1.12, yaw = 0.35, roll = 0 } = {}) => {
+    const holder = new THREE.Group(); holder.add(obj); holder.rotation.set(0, yaw, roll); ts.add(holder);
+    holder.updateMatrixWorld(true);
+    const bb = new THREE.Box3().setFromObject(holder), size = bb.getSize(new THREE.Vector3()), ctr = bb.getCenter(new THREE.Vector3());
+    const th = Math.tan(cam.fov * Math.PI / 360);
+    const dist = Math.max(size.y * pad / (2 * th), size.x * pad / (2 * th * cam.aspect)) + size.z * 0.5;
+    const e = elev * Math.PI / 180;
+    cam.position.set(ctr.x, ctr.y + Math.sin(e) * dist, ctr.z + Math.cos(e) * dist);
+    cam.lookAt(ctr); cam.updateProjectionMatrix();
+    renderer.render(ts, cam);
+    THUMBS[key] = renderer.domElement.toDataURL('image/png');
+    ts.remove(holder);
+  };
+  const hookahVariant = (woodMat, crystal) => {
+    const c = hookah.root.clone(true); c.position.set(0, 0, 0);
+    c.traverse(o => {
+      if (!o.isMesh) return;
+      if (o.userData.wood) o.material = woodMat;
+      if (crystal && o.userData.crystal) o.material = crystal[o.userData.crystal];
+    });
+    Object.values(c.children).forEach(ch => { ch.position.y = 0; ch.rotation.y = 0; });
+    return c;
+  };
+  shoot('hk-oak', hookahVariant(M.wood, null), { elev: 6, pad: 1.24, yaw: -0.35 });
+  shoot('hk-walnut', hookahVariant(M.walnut, M.crystalSmoke), { elev: 6, pad: 1.24, yaw: -0.35 });
+  shoot('hk-ebony', hookahVariant(M.ebony, M.crystalAmber), { elev: 6, pad: 1.24, yaw: -0.35 });
+  // coffret fermé
+  const bx = buildBox(); applyBoxState(bx, { show: 1, wBack: 1, wSide: 1, wDoor: 1, door: 0, lid: 0 }); bx.group.position.set(0, 0, 0);
+  shoot('box', bx.group, { elev: 10, pad: 1.24, yaw: -0.5 });
+  shoot('mp-cognac', buildMouthpiece(M.leatherCognac), { elev: 12, pad: 1.18, yaw: 0.2, roll: -0.62 });
+  shoot('mp-noir', buildMouthpiece(M.leatherNoir), { elev: 12, pad: 1.18, yaw: 0.2, roll: -0.62 });
+  shoot('mp-oak', buildMouthpiece(M.wood), { elev: 12, pad: 1.18, yaw: 0.2, roll: -0.62 });
+  shoot('mp-walnut', buildMouthpiece(M.walnut), { elev: 12, pad: 1.18, yaw: 0.2, roll: -0.62 });
+  shoot('bowl-terra', buildBowl(M.clay, false), { elev: 16, pad: 1.9, yaw: 0 });
+  shoot('bowl-noir', buildBowl(M.glazeBlack, false), { elev: 16, pad: 1.9, yaw: 0 });
+  shoot('hmd', buildHmd(0), { elev: 22, pad: 1.6, yaw: -0.6 });
+
+  renderer.setPixelRatio(prevPR);
+  renderer.setSize(innerWidth, innerHeight, false);
+}
+
+/* ---------------------------------------------------------------------
+   16. CATALOGUE (prix et fiches = contenu de démonstration à remplacer)
+--------------------------------------------------------------------- */
+const PRODUCTS = [
+  { id: 'oak', cat: 'chichas', name: 'Oak Crystal', desc: 'Chêne massif · Cristal taillé clair · Inox V2A', price: 689, badge: 'Signature',
+    opts: [{ label: 'Essentielle', thumb: 'hk-oak', add: 0 }, { label: 'Coffret signature', thumb: 'box', add: 49 }] },
+  { id: 'walnut', cat: 'chichas', name: 'Walnut Smoke', desc: 'Noyer massif · Cristal fumé · Inox V2A', price: 729, badge: 'Nouveau',
+    opts: [{ label: 'Essentielle', thumb: 'hk-walnut', add: 0 }, { label: 'Coffret signature', thumb: 'box', add: 49 }] },
+  { id: 'ebony', cat: 'chichas', name: 'Ebony Amber', desc: 'Chêne fumé · Cristal ambré · Inox V2A', price: 759, badge: 'Édition limitée',
+    opts: [{ label: 'Essentielle', thumb: 'hk-ebony', add: 0 }, { label: 'Coffret signature', thumb: 'box', add: 49 }] },
+  { id: 'mp-leather', cat: 'manches', name: 'Manche Cuir', desc: 'Cuir pleine fleur cousu main · Embouts inox', price: 89,
+    opts: [{ label: 'Cognac', sw: '#8a5530', thumb: 'mp-cognac', add: 0 }, { label: 'Noir', sw: '#1b1716', thumb: 'mp-noir', add: 0 }] },
+  { id: 'mp-wood', cat: 'manches', name: 'Manche Bois Tourné', desc: 'Bois massif tourné · Inox V2A', price: 69,
+    opts: [{ label: 'Chêne', sw: '#c48a4c', thumb: 'mp-oak', add: 0 }, { label: 'Noyer', sw: '#5e3a22', thumb: 'mp-walnut', add: 6 }] },
+  { id: 'bowl-terra', cat: 'foyers', name: 'Foyer Vorclas Terracotta', desc: 'Terre cuite naturelle · Chauffe homogène', price: 39,
+    opts: [{ label: 'À l\'unité', thumb: 'bowl-terra', add: 0 }, { label: 'Duo', thumb: 'bowl-terra', add: 33 }] },
+  { id: 'bowl-noir', cat: 'foyers', name: 'Foyer Vorclas Noir Glacé', desc: 'Terre cuite · Émail noir brillant', price: 45, badge: 'Nouveau',
+    opts: [{ label: 'À l\'unité', thumb: 'bowl-noir', add: 0 }, { label: 'Duo', thumb: 'bowl-noir', add: 39 }] },
+  { id: 'hmd', cat: 'foyers', name: 'Régulateur Vorclas', desc: 'Gestion de chaleur · Inox V2A · Poignée silicone', price: 59,
+    opts: [{ label: 'Inox brossé', thumb: 'hmd', add: 0 }] }
+];
+const ICON = {
+  heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20s-7-4.35-7-10a4 4 0 0 1 7-2.65A4 4 0 0 1 19 10c0 5.65-7 10-7 10Z"/></svg>',
+  bag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 7h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8L5 7Z"/><path d="M9 7V6a3 3 0 0 1 6 0v1"/></svg>'
+};
+function productPrice(p, opt) { return p.price + (p.opts[opt] ? p.opts[opt].add : 0); }
+function buildGrid() {
+  const grid = $('#grid');
+  grid.innerHTML = PRODUCTS.map(p => `
+    <article class="product" data-id="${p.id}" data-cat="${p.cat}" data-opt="0">
+      <div class="p-media">
+        ${p.badge ? `<span class="badge p-badge"><i></i>${p.badge}</span>` : ''}
+        <button class="p-wish" aria-label="Ajouter ${p.name} aux favoris" data-cursor>${ICON.heart}</button>
+        ${THUMBS[p.opts[0].thumb] ? `<img src="${THUMBS[p.opts[0].thumb]}" alt="WOOKAH ${p.name}" loading="lazy">` : `<div class="ph">W</div>`}
+      </div>
+      <div class="p-body">
+        <div class="p-top">
+          <div><span class="p-line">WOOKAH®</span><h3>${p.name}</h3></div>
+          <div class="p-price">${euro(p.price)}</div>
+        </div>
+        <p class="p-desc">${p.desc}</p>
+        <div class="p-opts" role="radiogroup" aria-label="Options ${p.name}">
+          ${p.opts.map((o, i) => `<button class="chip${i === 0 ? ' is-active' : ''}" data-i="${i}" role="radio" aria-checked="${i === 0}" data-cursor>${o.sw ? `<span class="sw" style="background:${o.sw}"></span>` : ''}${o.label}${o.add ? ` <span style="opacity:.6">+${euro(o.add)}</span>` : ''}</button>`).join('')}
+        </div>
+        <div class="p-ship"><i></i>En stock · expédié sous 48 h</div>
+        <div class="p-actions"><button class="btn btn--gold btn--sm add" data-cursor>${ICON.bag.replace('<svg', '<svg style="transform:none"')}Ajouter au panier</button></div>
+      </div>
+    </article>`).join('');
+  $('#shopMeta').textContent = `${PRODUCTS.length} pièces`;
+
+  $$('.product').forEach(card => {
+    const prod = PRODUCTS.find(p => p.id === card.dataset.id);
+    const img = $('img', card), price = $('.p-price', card);
+    $$('.chip', card).forEach(chip => chip.addEventListener('click', () => {
+      const i = +chip.dataset.i;
+      card.dataset.opt = i;
+      $$('.chip', card).forEach(c => { c.classList.toggle('is-active', c === chip); c.setAttribute('aria-checked', c === chip); });
+      gsap.fromTo(price, { y: -8, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.5, ease: 'power3.out', onStart: () => { price.textContent = euro(productPrice(prod, i)); } });
+      const src = THUMBS[prod.opts[i].thumb];
+      if (img && src && img.src !== src) gsap.to(img, { autoAlpha: 0, scale: 0.94, duration: 0.25, onComplete() { img.src = src; gsap.to(img, { autoAlpha: 1, scale: 1, duration: 0.6, ease: 'power3.out', clearProps: 'transform' }); } });
+    }));
+    $('.p-wish', card).addEventListener('click', e => {
+      const b = e.currentTarget; b.classList.toggle('is-on');
+      gsap.fromTo(b, { scale: 0.8 }, { scale: 1, duration: 0.6, ease: 'elastic.out(1,.4)' });
+      toast(b.classList.contains('is-on') ? `${prod.name} ajouté aux favoris` : `${prod.name} retiré des favoris`);
+    });
+    $('.add', card).addEventListener('click', () => addToCart(prod, +card.dataset.opt, img));
+    if (FINE_POINTER) {
+      card.addEventListener('pointermove', e => {
+        const r = card.getBoundingClientRect(), px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+        card.style.setProperty('--mx', `${px * 100}%`); card.style.setProperty('--my', `${py * 100}%`);
+        gsap.to(card, { rotateY: (px - 0.5) * 7, rotateX: (0.5 - py) * 5, transformPerspective: 1000, duration: 0.6, ease: 'power2.out' });
+      });
+      card.addEventListener('pointerleave', () => gsap.to(card, { rotateY: 0, rotateX: 0, duration: 0.9, ease: 'elastic.out(1,.5)' }));
+    }
+  });
+
+  gsap.set('.product', { autoAlpha: 0, y: 50 });
+  ScrollTrigger.batch('.product', {
+    start: 'top 92%', once: true,
+    onEnter: batch => gsap.to(batch, { autoAlpha: 1, y: 0, duration: 1.1, stagger: 0.09, ease: 'power3.out' })
+  });
+
+  $$('.filter').forEach(btn => btn.addEventListener('click', () => {
+    $$('.filter').forEach(b => { b.classList.toggle('is-active', b === btn); b.setAttribute('aria-selected', b === btn); });
+    const f = btn.dataset.filter, cards = $$('.product');
+    const show = cards.filter(c => f === 'all' || c.dataset.cat === f);
+    const hide = cards.filter(c => !show.includes(c) && c.style.display !== 'none');
+    $('#shopMeta').textContent = `${show.length} pièce${show.length > 1 ? 's' : ''}`;
+    const reveal = () => {
+      cards.forEach(c => { c.style.display = show.includes(c) ? '' : 'none'; });
+      gsap.fromTo(show, { autoAlpha: 0, y: 30, scale: 0.98 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.7, stagger: 0.06, ease: 'power3.out' });
+      ScrollTrigger.refresh();
+    };
+    if (hide.length) gsap.to(hide, { autoAlpha: 0, y: -10, scale: 0.96, duration: 0.28, ease: 'power2.in', onComplete: reveal });
+    else reveal();
+  }));
+}
+
+/* ---------------------------------------------------------------------
+   17. PANIER (drawer, quantités, animation "vol" vers l'icône)
+--------------------------------------------------------------------- */
+const cart = new Map();
+function addToCart(prod, opt, img) {
+  const key = `${prod.id}|${opt}`;
+  const line = cart.get(key) || { prod, opt, qty: 0 };
+  line.qty++; cart.set(key, line);
+  renderCart();
+  toast(`${prod.name} — ${prod.opts[opt].label} ajouté au panier`);
+  const target = $('#cartBtn').getBoundingClientRect();
+  if (img && img.src) {
+    const r = img.getBoundingClientRect();
+    const fly = document.createElement('img'); fly.src = img.src; fly.className = 'fly';
+    Object.assign(fly.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
+    document.body.appendChild(fly);
+    const dx = target.left + target.width / 2 - (r.left + r.width / 2), dy = target.top + target.height / 2 - (r.top + r.height / 2);
+    gsap.timeline({ onComplete: () => fly.remove() })
+      .to(fly, { x: dx, duration: 0.9, ease: 'power2.inOut' }, 0)
+      .to(fly, { y: dy, duration: 0.9, ease: 'back.in(1.4)' }, 0)
+      .to(fly, { scale: 0.08, rotate: 12, duration: 0.9, ease: 'power2.in' }, 0)
+      .to(fly, { autoAlpha: 0, duration: 0.2 }, 0.75);
+  }
+  gsap.fromTo('#cartCount', { scale: 1.6 }, { scale: 1, duration: 0.8, ease: 'elastic.out(1,.4)', delay: 0.7 });
+}
+function renderCart() {
+  const wrap = $('#cartItems');
+  let count = 0, sub = 0;
+  cart.forEach(l => { count += l.qty; sub += l.qty * productPrice(l.prod, l.opt); });
+  $('#cartCount').textContent = count;
+  $('#cartSub').textContent = euro(sub); $('#cartTotal').textContent = euro(sub);
+  if (!cart.size) { wrap.innerHTML = '<div class="drawer__empty">Votre panier est vide.<br>La collection vous attend.</div>'; return; }
+  wrap.innerHTML = [...cart.entries()].map(([key, l]) => {
+    const o = l.prod.opts[l.opt], src = THUMBS[o.thumb];
+    return `<div class="ci" data-key="${key}">
+      <div class="ci__img">${src ? `<img src="${src}" alt="">` : ''}</div>
+      <div><h5>WOOKAH® ${l.prod.name}</h5><small>${o.label}</small>
+        <div class="qty"><button data-act="dec" aria-label="Retirer un">−</button><span>${l.qty}</span><button data-act="inc" aria-label="Ajouter un">+</button></div></div>
+      <div><div class="ci__price">${euro(l.qty * productPrice(l.prod, l.opt))}</div><button class="ci__rm" data-act="rm">Retirer</button></div>
+    </div>`;
+  }).join('');
+}
+$('#cartItems').addEventListener('click', e => {
+  const btn = e.target.closest('[data-act]'); if (!btn) return;
+  const key = btn.closest('.ci').dataset.key, line = cart.get(key); if (!line) return;
+  if (btn.dataset.act === 'inc') line.qty++;
+  if (btn.dataset.act === 'dec') line.qty--;
+  if (btn.dataset.act === 'rm' || line.qty <= 0) cart.delete(key);
+  renderCart();
+});
+const openCart = open => {
+  document.body.classList.toggle('cart-open', open);
+  $('#drawer').setAttribute('aria-hidden', !open);
+  if (lenis) open ? lenis.stop() : lenis.start();
+};
+$('#cartBtn').addEventListener('click', () => openCart(true));
+$('#cartClose').addEventListener('click', () => openCart(false));
+$('#scrim').addEventListener('click', () => openCart(false));
+addEventListener('keydown', e => { if (e.key === 'Escape') openCart(false); });
+$('#checkoutBtn').addEventListener('click', () => toast(cart.size ? 'Démo : le paiement n\'est pas connecté.' : 'Votre panier est vide.'));
+$('#newsForm').addEventListener('submit', e => { e.preventDefault(); e.target.reset(); toast('Merci ! Inscription enregistrée (démo).'); });
+
+let toastTimer;
+function toast(msg) {
+  $('#toastMsg').textContent = msg;
+  $('#toast').classList.add('is-on');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => $('#toast').classList.remove('is-on'), 2600);
+}
+
+/* ---------------------------------------------------------------------
+   18. UI : curseur, boutons magnétiques, navigation, marquee, split text
+--------------------------------------------------------------------- */
+function splitChars(el) {
+  // mots insécables (retour à la ligne propre) → lettres animables
+  const words = el.textContent.trim().split(/\s+/); el.textContent = '';
+  const chars = [];
+  words.forEach((word, wi) => {
+    const w = document.createElement('span'); w.className = 'word';
+    [...word].forEach(ch => { const s = document.createElement('span'); s.className = 'char'; s.textContent = ch; w.appendChild(s); chars.push(s); });
+    el.appendChild(w);
+    if (wi < words.length - 1) el.appendChild(document.createTextNode(' '));
+  });
+  return chars;
+}
+function initUI() {
+  // navigation par chapitres
+  $$('[data-scroll]').forEach(el => el.addEventListener('click', e => {
+    e.preventDefault(); openCart(false); scrollToY(chapterY(+el.dataset.scroll));
+  }));
+  $$('a[href="#footer"]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); scrollToY($('#footer').offsetTop); }));
+
+  // pointeur (parallaxe 3D + curseur custom)
+  const cur = $('#cursor'), dot = $('.cursor__dot', cur), ring = $('.cursor__ring', cur);
+  const cp = { x: innerWidth / 2, y: innerHeight / 2, rx: innerWidth / 2, ry: innerHeight / 2 };
+  addEventListener('pointermove', e => {
+    cur.classList.add('is-on');
+    pointer.x = (e.clientX / innerWidth) * 2 - 1; pointer.y = (e.clientY / innerHeight) * 2 - 1;
+    cp.x = e.clientX; cp.y = e.clientY;
+  }, { passive: true });
+  if (FINE_POINTER) {
+    gsap.ticker.add(() => {
+      cp.rx = lerp(cp.rx, cp.x, 0.18); cp.ry = lerp(cp.ry, cp.y, 0.18);
+      dot.style.transform = `translate3d(${cp.x}px,${cp.y}px,0)`;
+      ring.style.transform = `translate3d(${cp.rx}px,${cp.ry}px,0)`;
+    });
+    document.addEventListener('pointerover', e => cur.classList.toggle('is-hover', !!e.target.closest('[data-cursor],button,a,input')));
+    $$('.magnetic').forEach(el => {
+      el.addEventListener('pointermove', e => {
+        const r = el.getBoundingClientRect();
+        gsap.to(el, { x: (e.clientX - r.left - r.width / 2) * 0.22, y: (e.clientY - r.top - r.height / 2) * 0.32, duration: 0.6, ease: 'power3.out' });
+      });
+      el.addEventListener('pointerleave', () => gsap.to(el, { x: 0, y: 0, duration: 1, ease: 'elastic.out(1,.35)' }));
+    });
+  }
+
+  // marquee réactif à la vitesse de scroll
+  const words = ['Chêne massif', 'Inox V2A', 'Cristal de Bohême', 'Quick-Lock', 'Purge 360°', 'Fait main', 'The Purest Draw'];
+  const chunk = words.map(w => `<span><em>✦</em>${w}</span>`).join('');
+  const mq = $('#marquee'); mq.innerHTML = chunk + chunk;
+  let mx = 0, mdir = 1;
+  gsap.ticker.add((time, delta) => {
+    const v = lenis ? lenis.velocity : 0;
+    if (Math.abs(v) > 0.5) mdir = Math.sign(v);
+    mx -= (40 + Math.min(Math.abs(v) * 14, 900)) * mdir * (delta / 1000);
+    const half = mq.scrollWidth / 2 || 1;
+    if (mx <= -half) mx += half; if (mx > 0) mx -= half;
+    mq.style.transform = `translate3d(${mx.toFixed(1)}px,0,0)`;
+  });
+
+  // titre "The Collection." révélé au scroll
+  const lineupChars = splitChars($('.lineup-split'));
+  gsap.fromTo(lineupChars, { yPercent: 105 }, {
+    yPercent: 0, ease: 'power2.out', stagger: 0.05,
+    scrollTrigger: { trigger: '.lineup', start: 'top 88%', end: 'top 38%', scrub: 1 }
+  });
+}
+
+/* ---------------------------------------------------------------------
+   19. BOOT
+--------------------------------------------------------------------- */
+async function boot() {
+  const fontsReady = document.fonts ? Promise.race([
+    Promise.all([document.fonts.load('600 64px Cinzel'), document.fonts.load('400 20px "Plus Jakarta Sans"')]), wait(2500)
+  ]).catch(() => {}) : Promise.resolve();
+
+  if (HAS_GL) {
+    progress(0.08, 'Essences de bois'); await nextFrame();
+    TEX = {};
+    TEX.oak = woodTextures({ seed: 7, base: [190, 114, 52], dark: [118, 60, 22], light: [226, 160, 96], rings: 30, warpAmt: 2.0, lateAmt: 0.62 });
+    progress(0.22, 'Chêne · noyer'); await nextFrame();
+    TEX.walnut = woodTextures({ w: 256, h: 512, seed: 21, base: [102, 64, 40], dark: [52, 30, 18], light: [142, 98, 64], rings: 16, fleckAmt: 0.3 });
+    TEX.ebony = woodTextures({ w: 256, h: 512, seed: 33, base: [46, 34, 28], dark: [18, 13, 11], light: [82, 64, 52], rings: 20, fleckAmt: 0.5 });
+    progress(0.34, 'Taille du cristal'); await nextFrame();
+    TEX.cut = crystalNormalMap();
+    TEX.brushed = brushedTexture();
+    TEX.thread = threadTexture();
+    TEX.clay = speckleTexture(256, [196, 116, 76], 0.3, 5);
+    TEX.leatherCognac = leatherTexture([138, 82, 44], 12);
+    TEX.leatherNoir = leatherTexture([30, 26, 24], 13);
+    TEX.diffuser = diffuserTexture();
+    TEX.hmd = hmdTexture();
+    progress(0.5, 'Gravures'); await fontsReady; await nextFrame();
+    TEX.ringText = ringDecalTexture();
+    TEX.medal = medallionTexture();
+    TEX.boxDecal = boxDecalTexture();
+    progress(0.6, 'Studio photo'); await nextFrame();
+    ENV = buildEnvironment();
+    buildMaterials(TEX, ENV);
+    progress(0.72, 'Assemblage'); await nextFrame();
+    buildScene();
+    computeCams();
+    renderer.compile(scene, camera);
+    progress(0.84, 'Collection'); await nextFrame();
+    renderThumbnails();
+  } else {
+    await fontsReady;
+  }
+  progress(0.94, 'Finitions'); await nextFrame();
+
+  buildTimeline();
+  initSpecs();
+  buildGrid();
+  renderCart();
+  initUI();
+  gsap.ticker.add(renderFrame);
+  if (HAS_GL) renderFrame(0, 16);
+
+  addEventListener('resize', () => {
+    if (HAS_GL) { renderer.setPixelRatio(pr()); renderer.setSize(innerWidth, innerHeight, false); computeCams(); }
+    MODE = layoutMode(); measureSpecs();
+  });
+  if (document.fonts) document.fonts.ready.then(() => { measureSpecs(); ScrollTrigger.refresh(); });
+
+  progress(1, 'Prêt'); await wait(650);
+  playIntro();
+}
+
+function playIntro() {
+  // "WOOKAH" lettre par lettre ; "Oak Crystal" (texte doré en background-clip) animé d'un bloc
+  const words = $$('.hero-word');
+  const heroChars = splitChars(words[0]).concat(words.slice(1));
+  gsap.set(heroChars, { yPercent: 110 });
+  gsap.set('.hero-reveal', { autoAlpha: 0, y: 24 });
+  gsap.set('#rail > *', { autoAlpha: 0, x: 20 });
+  const t = gsap.timeline({
+    onComplete() { ScrollTrigger.refresh(); }
+  });
+  t.to('.loader__word span', { yPercent: -120, duration: 0.8, stagger: 0.04, ease: 'power3.in' })
+    .to('#loader', { clipPath: 'inset(0 0 100% 0)', duration: 1.2, ease: 'expo.inOut' }, '-=0.25')
+    .set('#loader', { display: 'none' })
+    .to(intro, { y: 0, s: 1, duration: 2.6, ease: 'expo.out' }, '-=0.9')
+    .to(heroChars, { yPercent: 0, duration: 1.3, stagger: 0.045, ease: 'expo.out' }, '-=2.3')
+    .to('.hero-reveal', { autoAlpha: 1, y: 0, duration: 1.1, stagger: 0.08, ease: 'power3.out' }, '-=1.6')
+    .to('#rail > *', { autoAlpha: 1, x: 0, duration: 1, stagger: 0.1, ease: 'power3.out' }, '-=1')
+    .from('#nav', { y: -30, autoAlpha: 0, duration: 1, ease: 'power3.out' }, '<');
+  if (lenis) lenis.start();
+  document.body.classList.remove('is-loading');
+}
+
+boot().catch(err => {
+  console.error('[WOOKAH] Erreur au démarrage', err);
+  document.body.classList.remove('is-loading');
+  const l = $('#loader'); if (l) l.style.display = 'none';
+  if (lenis) lenis.start();
+});
+})();
+</script>
+</body>
+</html>
